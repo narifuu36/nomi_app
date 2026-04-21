@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>集計結果</h2>
+
+<h3>参加者</h3>
+<ul>
+{% for p in participants %}
+    <li>{{ p }}</li>
+{% endfor %}
+</ul>
+
+<h3>場所</h3>
+<canvas id="placeChart"></canvas>
+
+<h3>日程</h3>
+<canvas id="dateChart"></canvas>
+
+<h3>時間帯</h3>
+<canvas id="timeChart"></canvas>
+
+<form method="POST" action="/finish">
+    <button class="btn">完了する</button>
+</form>
+
+<!-- データだけ埋め込む -->
+<script>
+const places = {{ places | default({}) | tojson | safe }} || {};
+const dates  = {{ dates  | default({}) | tojson | safe }} || {};
+const times  = {{ times  | default({}) | tojson | safe }} || {};
+</script>
+
+<!-- JS読み込み -->
+<script src="{{ url_for('static', filename='js/chart.js') }}"></script>
+
+<script>
+renderCharts(places, dates, times);
+</script>
+
+{% endblock %}
