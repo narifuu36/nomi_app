@@ -1,38 +1,43 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h2>集計結果</h2>
+<div class="card">
+    <h2>集計結果</h2>
+</div>
 
-<h3>参加者</h3>
-<ul>
-{% for p in participants %}
-    <li>{{ p }}</li>
-{% endfor %}
-</ul>
+<div class="card">
+    <h3>参加者</h3>
+    {% for p in participants %}
+        <div>{{ p }}</div>
+    {% endfor %}
+</div>
 
-<h3>場所</h3>
-<canvas id="placeChart"></canvas>
+<div class="card chart-box">
+    <h3>場所</h3>
+    <canvas id="placeChart"></canvas>
+</div>
 
-<h3>日程</h3>
-<canvas id="dateChart"></canvas>
+<div class="card chart-box">
+    <h3>日程</h3>
+    <canvas id="dateChart"></canvas>
+</div>
 
-<h3>時間帯</h3>
-<canvas id="timeChart"></canvas>
+<div class="card chart-box">
+    <h3>時間帯</h3>
+    <canvas id="timeChart"></canvas>
+</div>
 
 <form method="POST" action="/finish">
-    <button class="btn">完了する</button>
+    <button class="btn-main">完了する</button>
 </form>
 
-<!-- データだけ埋め込む -->
 <script>
-const places = {{ places | default({}) | tojson | safe }} || {};
-const dates  = {{ dates  | default({}) | tojson | safe }} || {};
-const times  = {{ times  | default({}) | tojson | safe }} || {};
+const places = {{ places | default({}) | tojson | safe }};
+const dates  = {{ dates  | default({}) | tojson | safe }};
+const times  = {{ times  | default({}) | tojson | safe }};
 </script>
 
-<!-- JS読み込み -->
 <script src="{{ url_for('static', filename='js/chart.js') }}"></script>
-
 <script>
 renderCharts(places, dates, times);
 </script>

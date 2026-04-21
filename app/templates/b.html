@@ -1,45 +1,65 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h2>参加可否</h2>
+<div class="card">
+    <h2>現在募集中の飲み会</h2>
+    <p>残り時間: <span id="timer"></span></p>
+</div>
 
 <form method="POST">
 
-<label>
-    <input type="radio" name="will_join" value="1" onclick="toggleForm(true)"> 参加する
-</label>
-<label>
-    <input type="radio" name="will_join" value="0" onclick="toggleForm(false)"> 参加しない
-</label>
+<div class="card">
+    <h3>参加可否</h3>
 
-<div id="formArea" class="hidden">
+    <div class="toggle">
+        <button type="button" onclick="selectJoin(true)" id="joinBtn">参加する</button>
+        <button type="button" onclick="selectJoin(false)" id="noJoinBtn">参加しない</button>
+    </div>
 
+    <input type="hidden" name="will_join" id="will_join">
+
+</div>
+
+<div id="formArea" style="display:none;">
+
+<div class="card">
     <h3>場所</h3>
-    <label><input type="radio" name="place" value="新宿"> 新宿</label>
-    <label><input type="radio" name="place" value="渋谷"> 渋谷</label>
+    <div class="option-group">
+        <div class="option" onclick="selectOption(this, 'place', '新宿')">新宿</div>
+        <div class="option" onclick="selectOption(this, 'place', '渋谷')">渋谷</div>
+        <div class="option" onclick="selectOption(this, 'place', '池袋')">池袋</div>
+    </div>
+    <input type="hidden" name="place">
+</div>
 
+<div class="card">
     <h3>日程</h3>
     <input type="date" name="date">
+</div>
 
+<div class="card">
     <h3>時間帯</h3>
     <select name="time_slot">
         <option>18:00-20:00</option>
         <option>19:00-21:00</option>
+        <option>20:00-22:00</option>
     </select>
+</div>
 
 </div>
 
-<br>
-<button class="btn">送信</button>
+<div style="text-align:center;">
+    <button class="btn-main">投票する</button>
+</div>
+
 </form>
 
 {% if is_host %}
 <form method="POST" action="/finish">
-    <button style="background:red;color:white;">完了</button>
+    <button style="background:red;color:white;">締め切り</button>
 </form>
 {% endif %}
 
-<!-- JS読み込み -->
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 
 {% endblock %}

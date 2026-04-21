@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h2 style="text-align:center;">現在、飲み会イベントはありません</h2>
-<p style="text-align:center;">ボタンを押して開始しよう！</p>
+<div class="card" style="text-align:center;">
+    <h2>現在、アクティブな飲み会イベントはありません</h2>
+    <p>みんなで飲みたい？</p>
 
-<div style="text-align:center; margin-top:40px;">
     <form method="POST" action="/start">
-        <button class="btn" style="font-size:24px;">🍺 飲みたい！</button>
+        <button class="btn-main">🍺 飲みたい！</button>
     </form>
 </div>
 
