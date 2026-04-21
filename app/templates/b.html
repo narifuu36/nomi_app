@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>参加可否</h2>
+
+<form method="POST">
+
+<label>
+    <input type="radio" name="will_join" value="1" onclick="toggleForm(true)"> 参加する
+</label>
+<label>
+    <input type="radio" name="will_join" value="0" onclick="toggleForm(false)"> 参加しない
+</label>
+
+<div id="formArea" class="hidden">
+
+    <h3>場所</h3>
+    <label><input type="radio" name="place" value="新宿"> 新宿</label>
+    <label><input type="radio" name="place" value="渋谷"> 渋谷</label>
+
+    <h3>日程</h3>
+    <input type="date" name="date">
+
+    <h3>時間帯</h3>
+    <select name="time_slot">
+        <option>18:00-20:00</option>
+        <option>19:00-21:00</option>
+    </select>
+
+</div>
+
+<br>
+<button class="btn">送信</button>
+</form>
+
+{% if is_host %}
+<form method="POST" action="/finish">
+    <button style="background:red;color:white;">完了</button>
+</form>
+{% endif %}
+
+<!-- JS読み込み -->
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+{% endblock %}

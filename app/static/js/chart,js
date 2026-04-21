@@ -1,0 +1,21 @@
+function makeChart(id, dataObj) {
+    const ctx = document.getElementById(id);
+    if (!ctx || Object.keys(dataObj).length === 0) return;
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: Object.keys(dataObj),
+            datasets: [{
+                label: '票数',
+                data: Object.values(dataObj)
+            }]
+        }
+    });
+}
+
+function renderCharts(places, dates, times) {
+    makeChart("placeChart", places);
+    makeChart("dateChart", dates);
+    makeChart("timeChart", times);
+}
