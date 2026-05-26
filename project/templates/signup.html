@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新規登録 - 飲み会調整ツール</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="auth-body">
+    <header class="header">
+        <div class="header-logo">
+            <span class="beer-icon">🍻</span>
+            <span class="header-title">飲み会調整ツール</span>
+        </div>
+        <a href="/" class="back-link-top">トップに戻る</a>
+    </header>
+
+    <main class="main-content center-content">
+        <div class="auth-card">
+            <div class="auth-icon">✨</div>
+            <h1 class="auth-title">新規登録</h1>
+            <p class="auth-desc">新しいアカウントを作成して<br>飲み会を楽しみましょう！</p>
+            
+            <form action="/signup" method="POST">
+                <div class="form-group">
+                    <label class="form-label">ユーザー名</label>
+                    <input type="text" name="username" class="form-input" placeholder="ユーザー名を入力" required>
+                    <span class="input-hint">3〜20文字（半角英数、記号）</span>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">パスワード</label>
+                    <input type="password" name="password" class="form-input" placeholder="パスワードを入力" required>
+                    <span class="input-hint">8文字以上推奨</span>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">パスワード（確認）</label>
+                    <input type="password" name="password_confirm" class="form-input" placeholder="もう一度入力" required>
+                </div>
+
+                {% if error %}
+                <div class="error-notice">
+                    <span>⚠️</span> {{ error }}
+                </div>
+                {% endif %}
+                
+                <button type="submit" class="btn-submit orange-btn">
+                    <i class="fas fa-user-plus"></i> 登録する
+                </button>
+            </form>
+            
+            <div class="auth-switch">
+                すでにアカウントをお持ちの方は<br>
+                <a href="/login">ログインはこちら →</a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p class="copyright">© 2024 Nomikai Adjustment Tool</p>
+    </footer>
+</body>
+</html>
