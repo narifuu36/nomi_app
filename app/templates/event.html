@@ -7,241 +7,169 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-    <!-- ヘッダー -->
-    <header class="header">
-        <div class="header-logo">
-            <span class="beer-icon">🍻</span>
-            <span class="header-title">飲み会調整ツール</span>
-        </div>
-        <div class="header-user">
-            <span class="user-icon">👤</span>
-            <span class="user-name">ユーザー名</span>
-            <span class="dropdown-arrow">▼</span>
-        </div>
-    </header>
 
-    <!-- メインコンテンツ -->
-    <main class="main-content">
-        <!-- イベント情報カード -->
-        <section class="event-info-card">
-            <h1 class="event-title">現在募集中の飲み会 <span class="status-badge">募集中</span></h1>
-            
-            <div class="event-meta">
-                <div class="meta-item organizer">
-                    <span class="meta-icon">👑</span>
-                    <div class="meta-content">
-                        <span class="meta-label">主催者</span>
-                        <span class="meta-value">山田 太郎</span>
-                    </div>
-                </div>
-                
-                <div class="meta-item countdown">
-                    <span class="meta-icon">⏱️</span>
-                    <div class="meta-content">
-                        <span class="meta-label">終了まで残り</span>
-                        <span class="meta-value countdown-value">
-                            <span class="time-number">23</span>時間
-                            <span class="time-number highlight">45</span>分
-                            <span class="time-number highlight">12</span>秒
-                        </span>
-                    </div>
-                </div>
-                
-                <div class="meta-item created">
-                    <span class="meta-icon">📅</span>
-                    <div class="meta-content">
-                        <span class="meta-label">作成日時</span>
-                        <span class="meta-value">2024/05/22 19:30</span>
-                    </div>
-                </div>
-            </div>
-        </section>
+<main class="main-content">
 
-        <!-- 投票フォーム -->
-        <section class="voting-form">
-            <!-- 参加可否 -->
-            <div class="form-section">
-                <div class="section-header">
-                    <span class="section-icon">🍺</span>
-                    <div class="section-title-group">
-                        <h2 class="section-title">参加可否</h2>
-                        <p class="section-description">参加するかしないかを選択してください</p>
-                    </div>
-                </div>
-                <div class="participation-buttons">
-                    <button class="btn-participate active">
-                        参加する
-                        <span class="check-icon">✓</span>
-                    </button>
-                    <button class="btn-not-participate">参加しない</button>
-                </div>
-                <p class="form-hint">「参加する」を選択すると、以下の項目を入力できます。</p>
-            </div>
+<form method="POST" action="/event">
 
-            <!-- 場所を選択 -->
-            <div class="form-section">
-                <div class="section-header">
-                    <span class="section-icon">📍</span>
-                    <div class="section-title-group">
-                        <h2 class="section-title">場所を選択</h2>
-                        <p class="section-description">行きたいお店やエリアを選んでください</p>
-                    </div>
-                </div>
-                <div class="location-options">
-                    <label class="radio-option selected">
-                        <input type="radio" name="location" value="shinjuku" checked>
-                        <span class="radio-custom"></span>
-                        <span class="option-text">新宿エリア</span>
-                    </label>
-                    <label class="radio-option">
-                        <input type="radio" name="location" value="shibuya">
-                        <span class="radio-custom"></span>
-                        <span class="option-text">渋谷エリア</span>
-                    </label>
-                    <label class="radio-option">
-                        <input type="radio" name="location" value="ikebukuro">
-                        <span class="radio-custom"></span>
-                        <span class="option-text">池袋エリア</span>
-                    </label>
-                    <label class="radio-option">
-                        <input type="radio" name="location" value="ginza">
-                        <span class="radio-custom"></span>
-                        <span class="option-text">銀座エリア</span>
-                    </label>
-                    <label class="radio-option">
-                        <input type="radio" name="location" value="other">
-                        <span class="radio-custom"></span>
-                        <span class="option-text">その他（自由入力）</span>
-                    </label>
-                    <input type="text" class="other-input" placeholder="例：上野、恵比寿 など">
-                </div>
-            </div>
+<!-- 参加可否 -->
+<section class="form-section">
+    <h2>参加可否</h2>
 
-            <!-- 日程を選択 -->
-            <div class="form-section">
-                <div class="section-header">
-                    <span class="section-icon">📅</span>
-                    <div class="section-title-group">
-                        <h2 class="section-title">日程を選択</h2>
-                        <p class="section-description">都合の良い日を選んでください</p>
-                        <span class="multi-select-hint">複数選択できます</span>
-                    </div>
-                </div>
-                <div class="date-options">
-                    <label class="date-option selected">
-                        <input type="checkbox" name="date" value="5/24" checked>
-                        <span class="date-box">
-                            <span class="date-number">5/24</span>
-                            <span class="date-day">金</span>
-                            <span class="check-mark">✓</span>
-                        </span>
-                    </label>
-                    <label class="date-option">
-                        <input type="checkbox" name="date" value="5/25">
-                        <span class="date-box">
-                            <span class="date-number">5/25</span>
-                            <span class="date-day">土</span>
-                        </span>
-                    </label>
-                    <label class="date-option">
-                        <input type="checkbox" name="date" value="5/26">
-                        <span class="date-box">
-                            <span class="date-number">5/26</span>
-                            <span class="date-day sunday">日</span>
-                        </span>
-                    </label>
-                    <label class="date-option">
-                        <input type="checkbox" name="date" value="5/27">
-                        <span class="date-box">
-                            <span class="date-number">5/27</span>
-                            <span class="date-day">月</span>
-                        </span>
-                    </label>
-                    <label class="date-option">
-                        <input type="checkbox" name="date" value="5/28">
-                        <span class="date-box">
-                            <span class="date-number">5/28</span>
-                            <span class="date-day">火</span>
-                        </span>
-                    </label>
-                    <label class="date-option">
-                        <input type="checkbox" name="date" value="5/29">
-                        <span class="date-box">
-                            <span class="date-number">5/29</span>
-                            <span class="date-day">水</span>
-                        </span>
-                    </label>
-                    <label class="date-option">
-                        <input type="checkbox" name="date" value="5/30">
-                        <span class="date-box">
-                            <span class="date-number">5/30</span>
-                            <span class="date-day">木</span>
-                        </span>
-                    </label>
-                </div>
-                <button class="btn-calendar">
-                    <span class="calendar-icon">📅</span>
-                    カレンダーから選択する
-                </button>
-            </div>
+    <div class="participation-buttons">
+        <button type="button" class="btn-participate active" id="joinBtn">参加する</button>
+        <button type="button" class="btn-participate" id="notJoinBtn">参加しない</button>
+    </div>
 
-            <!-- 時間帯を選択 -->
-            <div class="form-section">
-                <div class="section-header">
-                    <span class="section-icon">🕐</span>
-                    <div class="section-title-group">
-                        <h2 class="section-title">時間帯を選択</h2>
-                        <p class="section-description">都合の良い時間帯を選んでください</p>
-                        <span class="single-select-hint">1つ選択してください</span>
-                    </div>
-                </div>
-                <div class="time-select-wrapper">
-                    <select class="time-select">
-                        <option value="19:00-21:00">🕐 19:00 - 21:00</option>
-                        <option value="18:00-20:00">🕐 18:00 - 20:00</option>
-                        <option value="20:00-22:00">🕐 20:00 - 22:00</option>
-                        <option value="21:00-23:00">🕐 21:00 - 23:00</option>
-                    </select>
-                </div>
-            </div>
+    <input type="hidden" name="will_join" id="will_join" value="1">
+</section>
 
-            <!-- アクションボタン -->
-            <div class="action-buttons">
-                <button class="btn-submit">
-                    <span class="submit-icon">📤</span>
-                    投票を送信する
-                    <span class="submit-subtitle">入力内容を保存して結果を見る</span>
-                </button>
-                
-                <div class="organizer-menu">
-                    <div class="organizer-menu-header">
-                        <span class="crown-icon">👑</span>
-                        <span>主催者メニュー</span>
-                    </div>
-                    <button class="btn-complete">完了（締め切り）する</button>
-                    <p class="organizer-hint">集計を確定してイベントを終了します</p>
-                </div>
-            </div>
 
-            <!-- 修正可能の案内 -->
-            <div class="edit-notice">
-                <span class="notice-icon">💡</span>
-                <div class="notice-content">
-                    <h3 class="notice-title">いつでも修正できます</h3>
-                    <p class="notice-text">投票後も内容はいつでも変更可能です。締切前であれば、何度でも更新できます。</p>
-                </div>
-            </div>
-        </section>
-    </main>
+<!-- 場所 -->
+<section class="form-section">
+    <h2>場所</h2>
 
-    <!-- フッター -->
-    <footer class="footer">
-        <p class="copyright">© 2024 Nomikai Adjustment Tool</p>
-        <nav class="footer-nav">
-            <a href="#">使い方ガイド</a>
-            <a href="#">お問い合わせ</a>
-            <a href="#">プライバシーポリシー</a>
-        </nav>
-    </footer>
+    <div class="location-options">
+
+        <label class="radio-option selected">
+            <input type="radio" name="place" value="名古屋" checked>
+            <span>名古屋</span>
+        </label>
+
+        <label class="radio-option">
+            <input type="radio" name="place" value="栄">
+            <span>栄</span>
+        </label>
+
+        <label class="radio-option">
+            <input type="radio" name="place" value="伏見">
+            <span>伏見</span>
+        </label>
+
+        <label class="radio-option">
+            <input type="radio" name="place" value="other">
+            <span>その他</span>
+        </label>
+
+        <input type="text" id="otherInput" class="other-input" placeholder="場所を入力" disabled>
+
+    </div>
+</section>
+
+
+<!-- 日程 -->
+<section class="form-section">
+    <h2>日程（複数選択）</h2>
+    <div id="dateContainer" class="date-options"></div>
+</section>
+
+<input type="hidden" name="date" id="dateInput">
+
+
+<!-- 時間 -->
+<section class="form-section">
+    <h2>時間</h2>
+
+    <select name="time_slot" id="timeSelect">
+        <option value="18-20">18:00-20:00</option>
+        <option value="19-21">19:00-21:00</option>
+        <option value="20-22">20:00-22:00</option>
+    </select>
+</section>
+
+
+<!-- 送信 -->
+<section class="form-section">
+    <button type="submit" id="submitBtn" class="btn-submit">
+        送信して次へ
+    </button>
+</section>
+
+</form>
+
+</main>
+
+<script>
+/* =========================
+   参加可否
+========================= */
+const joinBtn = document.getElementById("joinBtn");
+const notJoinBtn = document.getElementById("notJoinBtn");
+const willJoinInput = document.getElementById("will_join");
+
+joinBtn.onclick = () => {
+    joinBtn.classList.add("active");
+    notJoinBtn.classList.remove("active");
+    willJoinInput.value = 1;
+};
+
+notJoinBtn.onclick = () => {
+    notJoinBtn.classList.add("active");
+    joinBtn.classList.remove("active");
+    willJoinInput.value = 0;
+};
+
+
+/* =========================
+   その他
+========================= */
+const otherInput = document.getElementById("otherInput");
+
+document.querySelectorAll('input[name="place"]').forEach(radio => {
+    radio.addEventListener("change", () => {
+        if (radio.value === "other") {
+            otherInput.disabled = false;
+        } else {
+            otherInput.disabled = true;
+            otherInput.value = "";
+        }
+    });
+});
+
+
+/* =========================
+   日付（7日生成）
+========================= */
+const container = document.getElementById("dateContainer");
+const today = new Date();
+
+for (let i = 0; i < 7; i++) {
+    const d = new Date();
+    d.setDate(today.getDate() + i);
+
+    const value = `${d.getMonth() + 1}/${d.getDate()}`;
+
+    const label = document.createElement("label");
+    label.className = "date-option";
+
+    label.innerHTML = `
+        <input type="checkbox" value="${value}">
+        <span class="date-box">${value}</span>
+    `;
+
+    label.addEventListener("click", () => {
+        const input = label.querySelector("input");
+        input.checked = !input.checked;
+        label.classList.toggle("selected", input.checked);
+    });
+
+    container.appendChild(label);
+}
+
+
+/* =========================
+   送信前
+========================= */
+document.querySelector("form").addEventListener("submit", () => {
+
+    const dates = Array.from(
+        document.querySelectorAll(".date-option input:checked")
+    ).map(i => i.value);
+
+    document.getElementById("dateInput").value = dates.join(",");
+
+});
+</script>
+
 </body>
 </html>

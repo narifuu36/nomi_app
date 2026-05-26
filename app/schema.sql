@@ -1,35 +1,26 @@
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS events;
-DROP TABLE IF EXISTS responses;
+DROP TABLE IF EXISTS votes;
 
--- ユーザー
 CREATE TABLE users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    name TEXT NOT NULL UNIQUE,
+    password TEXT NOT NULL
 );
 
--- イベント
 CREATE TABLE events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title TEXT DEFAULT '現在募集中の飲み会',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    title TEXT NOT NULL,
+    created_by INTEGER,
     is_active INTEGER DEFAULT 1,
-    host_user_id INTEGER,
-    FOREIGN KEY(host_user_id) REFERENCES users(id)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 回答データ
-CREATE TABLE responses (
+CREATE TABLE votes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
     event_id INTEGER,
-    will_join INTEGER,
-    place TEXT,
+    location TEXT,
     date TEXT,
-    time_slot TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(user_id) REFERENCES users(id),
-    FOREIGN KEY(event_id) REFERENCES events(id)
+    time TEXT
 );
