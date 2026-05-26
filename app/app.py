@@ -5,7 +5,7 @@ from collections import Counter
 app = Flask(__name__)
 app.secret_key = "secret-key"
 
-DB_NAME = "database.db"
+DB_NAME = "nomikai.db"
 
 
 # DB接続
@@ -104,14 +104,18 @@ def event():
     # イベントがない場合は自動作成
     if not event:
 
-        username = session.get("username", "ゲスト")
+        username = session.get("username")
+
+        if not username:
+            return redirect(url_for("login"))
 
         user = conn.execute(
             "SELECT * FROM users WHERE name = ?",
             (username,)
         ).fetchone()
 
-        if not user:
+        # ユーザーが存在しない場合のみ作成
+        if user is None:
             conn.execute(
                 "INSERT INTO users (name) VALUES (?)",
                 (username,)
@@ -140,7 +144,10 @@ def event():
     # 投票送信
     if request.method == "POST":
 
-        username = session.get("username", "ゲスト")
+        username = session.get("username")
+
+        if not username:
+            return redirect(url_for("login"))
 
         user = conn.execute(
             "SELECT * FROM users WHERE name = ?",
