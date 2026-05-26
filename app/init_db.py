@@ -5,12 +5,20 @@ with open('schema.sql', 'r', encoding='utf-8') as f:
     conn.executescript(f.read())
 
 # 仮ユーザー投入
-users = ["田中", "佐藤", "鈴木", "高橋"]
+users = [
+    ('tanaka', 'pass1234'),
+    ('sato', 'pass1234'),
+    ('suzuki', 'pass1234'),
+    ('takahashi', 'pass1234')
+]
 
-for name in users:
-    conn.execute("INSERT INTO users (name) VALUES (?)", (name,))
+for username, password in users:
+    conn.execute(
+        "INSERT INTO users (username, password) VALUES (?, ?)",
+        (username, password)
+    )
 
 conn.commit()
 conn.close()
 
-print("DB initialized.")
+print('DB initialized.')

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>集計結果 - 飲み会調整ツール</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header class="header">
+        <div class="header-logo">
+            <span class="beer-icon">🍻</span>
+            <span class="header-title">飲み会調整ツール</span>
+        </div>
+        <div class="header-user">
+            <span class="user-icon">👤</span>
+            <span class="user-name">ユーザー名</span>
+            <span class="dropdown-arrow">▼</span>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="sub-header">
+            <a href="event.html" class="back-link">← 投票画面に戻る</a>
+        </div>
+
+        <section class="result-header-card">
+            <div class="result-header-left">
+                <div class="result-title-wrapper">
+                    <span class="large-beer-icon">🍻</span>
+                    <div>
+                        <h1 class="result-title">集計結果 <span class="status-badge">募集中</span></h1>
+                        <p class="result-subtitle">みんなの投票結果を確認しましょう！</p>
+                    </div>
+                </div>
+            </div>
+            <div class="result-header-right">
+                <div class="meta-item countdown">
+                    <span class="meta-icon">⏱️</span>
+                    <div class="meta-content">
+                        <span class="meta-label">終了まで残り</span>
+                        <span class="meta-value countdown-value">
+                            <span class="time-number">23</span>時間
+                            <span class="time-number highlight">12</span>分
+                            <span class="time-number highlight">45</span>秒
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="meta-item created">
+                    <span class="meta-icon">📅</span>
+                    <div class="meta-content">
+                        <span class="meta-label">作成日時</span>
+                        <span class="meta-value">2024/05/22 19:30</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="result-section">
+            <div class="section-header-flex">
+                <div class="section-title-group-flex">
+                    <span class="section-icon">👥</span>
+                    <h2 class="section-title">参加者一覧 <span class="participant-count">(8人中 6人が参加)</span></h2>
+                </div>
+                <button class="btn-outline-small">📋 参加者をコピー</button>
+            </div>
+            
+            <div class="participant-list">
+                <div class="participant-badge organizer">
+                    <span class="crown-icon">👑</span>
+                    <div class="participant-info">
+                        <span class="participant-name">山田 太郎</span>
+                        <span class="participant-role">(主催者)</span>
+                    </div>
+                </div>
+                <div class="participant-badge">
+                    <span class="user-icon">👤</span> <span class="participant-name">鈴木 花子</span>
+                </div>
+                <div class="participant-badge">
+                    <span class="user-icon">👤</span> <span class="participant-name">佐藤 健</span>
+                </div>
+                <div class="participant-badge">
+                    <span class="user-icon">👤</span> <span class="participant-name">田中 美咲</span>
+                </div>
+                <div class="participant-badge">
+                    <span class="user-icon">👤</span> <span class="participant-name">伊藤 大輔</span>
+                </div>
+                <div class="participant-badge">
+                    <span class="user-icon">👤</span> <span class="participant-name">高橋 優</span>
+                </div>
+            </div>
+            <p class="note-text">※ 参加しないを選択したユーザーは表示されません</p>
+        </section>
+
+        <div class="voting-results-grid">
+            <section class="result-card">
+                <div class="result-card-header">
+                    <span class="section-icon">📍</span>
+                    <h3 class="result-card-title">場所の投票結果</h3>
+                    <span class="vote-total-badge">6票</span>
+                </div>
+                <div class="vote-bars">
+                    <div class="vote-bar-item winner">
+                        <div class="vote-bar-label">新宿エリア</div>
+                        <div class="vote-bar-track"><div class="vote-bar-fill" style="width: 67%;"></div></div>
+                        <div class="vote-bar-stats">4票 (67%) <span class="crown-icon small">👑</span></div>
+                    </div>
+                    <div class="vote-bar-item">
+                        <div class="vote-bar-label">渋谷エリア</div>
+                        <div class="vote-bar-track"><div class="vote-bar-fill" style="width: 33%;"></div></div>
+                        <div class="vote-bar-stats">2票 (33%)</div>
+                    </div>
+                    <div class="vote-bar-item">
+                        <div class="vote-bar-label">池袋エリア</div>
+                        <div class="vote-bar-track"><div class="vote-bar-fill" style="width: 17%;"></div></div>
+                        <div class="vote-bar-stats">1票 (17%)</div>
+                    </div>
+                    <div class="vote-bar-item">
+                        <div class="vote-bar-label">銀座エリア</div>
+                        <div class="vote-bar-track"><div class="vote-bar-fill" style="width: 0%;"></div></div>
+                        <div class="vote-bar-stats">0票 (0%)</div>
+                    </div>
+                    <div class="vote-bar-item">
+                        <div class="vote-bar-label">その他</div>
+                        <div class="vote-bar-track"><div class="vote-bar-fill" style="width: 0%;"></div></div>
+                        <div class="vote-bar-stats">0票 (0%)</div>
+                    </div>
+                </div>
+                <p class="note-text">※ 複数選択可</p>
+            </section>
+
+            <section class="result-card">
+                <div class="result-card-header">
+                    <span class="section-icon">📅</span>
+                    <h3 class="result-card-title">日程の投票結果</h3>
+                    <span class="vote-total-badge">6票</span>
+                </div>
+                <div class="vote-bars">
+                    <div class="vote-bar-item winner">
+                        <div class="vote-bar-label">5/24 (金)</div>
+                        <div class="vote-bar-track"><div class="vote-bar-fill" style="width: 50%;"></div></div>
+                        <div class="vote-bar-stats">3票 (50%) <span class="crown-icon small">👑</span></div>
+                    </div>
+                    <div class="vote-bar-item">
+                        <div class="vote-bar-label">5/25 (土)</div>
+                        <div class="vote-bar-track"><div class="vote-bar-fill" style="width: 33%;"></div></div>
+                        <div class="vote-bar-stats">2票 (33%)</div>
+                    </div>
+                    <div class="vote-bar-item">
+                        <div class="vote-bar-label">5/26 (日)</div>
+                        <div class="vote-bar-track"><div class="vote-bar-fill" style="width: 17%;"></div></div>
+                        <div class="vote-bar-stats">1票 (17%)</div>
+                    </div>
+                    <div class="vote-bar-item">
+                        <div class="vote-bar-label">5/27 (月)</div>
+                        <div class="vote-bar-track"><div class="vote-bar-fill" style="width: 0%;"></div></div>
+                        <div class="vote-bar-stats">0票 (0%)</div>
+                    </div>
+                    <div class="vote-bar-item">
+                        <div class="vote-bar-label">5/28 (火)</div>
+                        <div class="vote-bar-track"><div class="vote-bar-fill" style="width: 0%;"></div></div>
+                        <div class="vote-bar-stats">0票 (0%)</div>
+                    </div>
+                </div>
+                <p class="note-text">※ 複数選択可</p>
+            </section>
+
+            <section class="result-card">
+                <div class="result-card-header">
+                    <span class="section-icon">🕐</span>
+                    <h3 class="result-card-title">時間帯の投票結果</h3>
+                    <span class="vote-total-badge">6票</span>
+                </div>
+                <div class="vote-bars">
+                    <div class="vote-bar-item winner">
+                        <div class="vote-bar-label">19:00 - 21:00</div>
+                        <div class="vote-bar-track"><div class="vote-bar-fill" style="width: 67%;"></div></div>
+                        <div class="vote-bar-stats">4票 (67%) <span class="crown-icon small">👑</span></div>
+                    </div>
+                    <div class="vote-bar-item">
+                        <div class="vote-bar-label">18:00 - 20:00</div>
+                        <div class="vote-bar-track"><div class="vote-bar-fill" style="width: 33%;"></div></div>
+                        <div class="vote-bar-stats">2票 (33%)</div>
+                    </div>
+                    <div class="vote-bar-item">
+                        <div class="vote-bar-label">20:00 - 22:00</div>
+                        <div class="vote-bar-track"><div class="vote-bar-fill" style="width: 17%;"></div></div>
+                        <div class="vote-bar-stats">1票 (17%)</div>
+                    </div>
+                    <div class="vote-bar-item">
+                        <div class="vote-bar-label">21:00 - 23:00</div>
+                        <div class="vote-bar-track"><div class="vote-bar-fill" style="width: 0%;"></div></div>
+                        <div class="vote-bar-stats">0票 (0%)</div>
+                    </div>
+                    <div class="vote-bar-item">
+                        <div class="vote-bar-label">その他</div>
+                        <div class="vote-bar-track"><div class="vote-bar-fill" style="width: 0%;"></div></div>
+                        <div class="vote-bar-stats">0票 (0%)</div>
+                    </div>
+                </div>
+                <p class="note-text">※ 1人1つ選択</p>
+            </section>
+        </div>
+
+        <section class="recommended-plan-card">
+            <div class="recommended-header">
+                <span class="section-icon">🍕</span>
+                <h2 class="section-title">おすすめプラン <span class="participant-count">(最多票の組み合わせ)</span></h2>
+            </div>
+            <div class="plan-combination">
+                <div class="plan-item">新宿エリア</div>
+                <div class="plan-cross">×</div>
+                <div class="plan-item">5/24 (金)</div>
+                <div class="plan-cross">×</div>
+                <div class="plan-item">19:00 - 21:00</div>
+            </div>
+            <p class="note-text center">※ これはみんなの投票結果からのおすすめです。最終決定は主催者が行います。</p>
+        </section>
+
+        <div class="bottom-actions-grid">
+            <div class="tips-card">
+                <div class="tips-header">
+                    <span class="notice-icon">💡</span>
+                    <h3 class="notice-title">使い方のポイント</h3>
+                </div>
+                <div class="tips-list">
+                    <div class="tip-item">
+                        <span class="check-icon-green">✓</span>
+                        <div>
+                            <h4>投票内容はいつでも変更できます</h4>
+                            <p>より良い飲み会にするために、気になったことがあれば変更しましょう。</p>
+                        </div>
+                    </div>
+                    <div class="tip-item">
+                        <span class="check-icon-green">✓</span>
+                        <div>
+                            <h4>結果を参考にみんなで相談</h4>
+                            <p>集計結果を見ながら、チャットや口頭で相談して決めましょう。</p>
+                        </div>
+                    </div>
+                    <div class="tip-item">
+                        <span class="check-icon-green">✓</span>
+                        <div>
+                            <h4>主催者が最終決定します</h4>
+                            <p>「完了する」ボタンを押すと、イベントが終了します。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="organizer-action-card">
+                <button class="btn-submit">
+                    <span class="crown-icon">👑</span>
+                    完了（締め切り）する
+                </button>
+                <p class="organizer-hint-main">このイベントを終了して確定します</p>
+                <p class="note-text center">※ 主催者のみ操作できます</p>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p class="copyright">© 2024 Nomikai Adjustment Tool</p>
+        <nav class="footer-nav">
+            <a href="#">使い方ガイド</a>
+            <a href="#">お問い合わせ</a>
+            <a href="#">プライバシーポリシー</a>
+        </nav>
+    </footer>
+</body>
+</html>
