@@ -15,12 +15,35 @@ def get_db():
     return conn
 
 
-# トップ画面
+# 起動時
 @app.route("/")
+def home():
+
+    if "username" not in session:
+        return redirect(url_for("login"))
+
+    return redirect(url_for("index"))
+
+
+# トップ画面
+@app.route("/index")
 def index():
+
+    if "username" not in session:
+        return redirect(url_for("login"))
+
+    conn = get_db()
+
+    event = conn.execute(
+        "SELECT * FROM events WHERE is_active = 1 LIMIT 1"
+    ).fetchone()
+
+    conn.close()
+
     return render_template(
         "index.html",
-        username=session.get("username")
+        username=session.get("username"),
+        event_exists=(event is not None)
     )
 
 
@@ -71,6 +94,7 @@ def signup():
         ).fetchone()
 
         if exists:
+            conn.close()
             return render_template(
                 "signup.html",
                 error="そのユーザー名は既に使用されています"
@@ -95,37 +119,22 @@ def signup():
 @app.route("/event", methods=["GET", "POST"])
 def event():
 
+    if "username" not in session:
+        return redirect(url_for("login"))
+
     conn = get_db()
 
-    event = conn.execute(
+    event_data = conn.execute(
         "SELECT * FROM events WHERE is_active = 1 LIMIT 1"
     ).fetchone()
 
-    # イベントがない場合は自動作成
-    if not event:
-
-        username = session.get("username")
-
-        if not username:
-            return redirect(url_for("login"))
+    # イベントが無ければ作成
+    if request.method == "GET" and event_data is None:
 
         user = conn.execute(
             "SELECT * FROM users WHERE name = ?",
-            (username,)
+            (session["username"],)
         ).fetchone()
-
-        # ユーザーが存在しない場合のみ作成
-        if user is None:
-            conn.execute(
-                "INSERT INTO users (name) VALUES (?)",
-                (username,)
-            )
-            conn.commit()
-
-            user = conn.execute(
-                "SELECT * FROM users WHERE name = ?",
-                (username,)
-            ).fetchone()
 
         conn.execute(
             """
@@ -137,26 +146,28 @@ def event():
 
         conn.commit()
 
-        event = conn.execute(
+        event_data = conn.execute(
             "SELECT * FROM events WHERE is_active = 1 LIMIT 1"
         ).fetchone()
 
     # 投票送信
     if request.method == "POST":
 
-        username = session.get("username")
-
-        if not username:
-            return redirect(url_for("login"))
-
         user = conn.execute(
             "SELECT * FROM users WHERE name = ?",
-            (username,)
+            (session["username"],)
         ).fetchone()
 
-        will_join = int(request.form["will_join"])
         place = request.form.get("place")
-        date = ",".join(request.form.getlist("date"))
+
+        # その他入力対応
+        if place == "other":
+            place = request.form.get("other_place")
+
+        will_join = int(request.form.get("will_join", 1))
+
+        date = request.form.get("date", "")
+
         time_slot = request.form.get("time_slot")
 
         conn.execute(
@@ -174,7 +185,7 @@ def event():
             """,
             (
                 user["id"],
-                event["id"],
+                event_data["id"],
                 will_join,
                 place,
                 date,
@@ -183,6 +194,7 @@ def event():
         )
 
         conn.commit()
+        conn.close()
 
         return redirect(url_for("result"))
 
@@ -190,7 +202,7 @@ def event():
 
     return render_template(
         "event.html",
-        username=session.get("username", "ゲスト")
+        username=session.get("username")
     )
 
 
@@ -198,11 +210,18 @@ def event():
 @app.route("/result")
 def result():
 
+    if "username" not in session:
+        return redirect(url_for("login"))
+
     conn = get_db()
 
-    event = conn.execute(
+    event_data = conn.execute(
         "SELECT * FROM events WHERE is_active = 1 LIMIT 1"
     ).fetchone()
+
+    if event_data is None:
+        conn.close()
+        return redirect(url_for("index"))
 
     responses = conn.execute(
         """
@@ -212,7 +231,7 @@ def result():
         ON responses.user_id = users.id
         WHERE event_id = ?
         """,
-        (event["id"],)
+        (event_data["id"],)
     ).fetchall()
 
     place_counter = Counter()
@@ -234,7 +253,8 @@ def result():
             dates = r["date"].split(",")
 
             for d in dates:
-                date_counter[d] += 1
+                if d:
+                    date_counter[d] += 1
 
         if r["time_slot"]:
             time_counter[r["time_slot"]] += 1
@@ -243,7 +263,7 @@ def result():
 
     return render_template(
         "result.html",
-        username=session.get("username", "ゲスト"),
+        username=session.get("username"),
         participants=participants,
         place_results=place_counter.items(),
         date_results=date_counter.items(),
@@ -273,7 +293,7 @@ def logout():
 
     session.clear()
 
-    return redirect(url_for("index"))
+    return redirect(url_for("login"))
 
 
 if __name__ == "__main__":

@@ -1,175 +1,170 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>飲み会調整ツール</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
+
 <body>
 
-<main class="main-content">
+    <main class="main-content">
 
-<form method="POST" action="/event">
+        <form method="POST" action="/event">
 
-<!-- 参加可否 -->
-<section class="form-section">
-    <h2>参加可否</h2>
+            <!-- 参加可否 -->
+            <section class="form-section">
+                <h2>参加可否</h2>
 
-    <div class="participation-buttons">
-        <button type="button" class="btn-participate active" id="joinBtn">参加する</button>
-        <button type="button" class="btn-participate" id="notJoinBtn">参加しない</button>
-    </div>
+                <div class="participation-buttons">
+                    <button type="button" class="btn-participate active" id="joinBtn">参加する</button>
+                    <button type="button" class="btn-participate" id="notJoinBtn">参加しない</button>
+                </div>
 
-    <input type="hidden" name="will_join" id="will_join" value="1">
-</section>
-
-
-<!-- 場所 -->
-<section class="form-section">
-    <h2>場所</h2>
-
-    <div class="location-options">
-
-        <label class="radio-option selected">
-            <input type="radio" name="place" value="名古屋" checked>
-            <span>名古屋</span>
-        </label>
-
-        <label class="radio-option">
-            <input type="radio" name="place" value="栄">
-            <span>栄</span>
-        </label>
-
-        <label class="radio-option">
-            <input type="radio" name="place" value="伏見">
-            <span>伏見</span>
-        </label>
-
-        <label class="radio-option">
-            <input type="radio" name="place" value="other">
-            <span>その他</span>
-        </label>
-
-        <input type="text" id="otherInput" class="other-input" placeholder="場所を入力" disabled>
-
-    </div>
-</section>
+                <input type="hidden" name="will_join" id="will_join" value="1">
+            </section>
 
 
-<!-- 日程 -->
-<section class="form-section">
-    <h2>日程（複数選択）</h2>
-    <div id="dateContainer" class="date-options"></div>
-</section>
+            <!-- 場所 -->
+            <section class="form-section">
+                <h2>場所</h2>
 
-<input type="hidden" name="date" id="dateInput">
+                <div class="location-options">
 
+                    <label class="radio-option selected">
+                        <input type="radio" name="place" value="名古屋" checked>
+                        <span>名古屋</span>
+                    </label>
 
-<!-- 時間 -->
-<section class="form-section">
-    <h2>時間</h2>
+                    <label class="radio-option">
+                        <input type="radio" name="place" value="栄">
+                        <span>栄</span>
+                    </label>
 
-    <select name="time_slot" id="timeSelect">
-        <option value="18-20">18:00-20:00</option>
-        <option value="19-21">19:00-21:00</option>
-        <option value="20-22">20:00-22:00</option>
-    </select>
-</section>
+                    <label class="radio-option">
+                        <input type="radio" name="place" value="伏見">
+                        <span>伏見</span>
+                    </label>
 
+                    <label class="radio-option">
+                        <input type="radio" name="place" value="other">
+                        <span>その他</span>
+                    </label>
 
-<!-- 送信 -->
-<section class="form-section">
-    <button type="submit" id="submitBtn" class="btn-submit">
-        送信して次へ
-    </button>
-</section>
+                    <input type="text" id="otherInput" name="other_place" class="other-input" placeholder="場所を入力"
+                        disabled>
 
-</form>
-
-</main>
-
-<script>
-/* =========================
-   参加可否
-========================= */
-const joinBtn = document.getElementById("joinBtn");
-const notJoinBtn = document.getElementById("notJoinBtn");
-const willJoinInput = document.getElementById("will_join");
-
-joinBtn.onclick = () => {
-    joinBtn.classList.add("active");
-    notJoinBtn.classList.remove("active");
-    willJoinInput.value = 1;
-};
-
-notJoinBtn.onclick = () => {
-    notJoinBtn.classList.add("active");
-    joinBtn.classList.remove("active");
-    willJoinInput.value = 0;
-};
+                </div>
+            </section>
 
 
-/* =========================
-   その他
-========================= */
-const otherInput = document.getElementById("otherInput");
+            <!-- 日程 -->
+            <section class="form-section">
+                <h2>日程（複数選択）</h2>
+                <div id="dateContainer" class="date-options"></div>
+            </section>
 
-document.querySelectorAll('input[name="place"]').forEach(radio => {
-    radio.addEventListener("change", () => {
-        if (radio.value === "other") {
-            otherInput.disabled = false;
-        } else {
-            otherInput.disabled = true;
-            otherInput.value = "";
+
+
+
+            <!-- 時間 -->
+            <section class="form-section">
+                <h2>時間</h2>
+
+                <select name="time_slot" id="timeSelect">
+                    <option value="18-20">18:00-20:00</option>
+                    <option value="19-21">19:00-21:00</option>
+                    <option value="20-22">20:00-22:00</option>
+                </select>
+            </section>
+
+
+            <!-- 送信 -->
+            <section class="form-section">
+                <button type="submit" id="submitBtn" class="btn-submit">
+                    送信して次へ
+                </button>
+            </section>
+
+        </form>
+
+    </main>
+
+    <script>
+        /* =========================
+           参加可否
+        ========================= */
+        const joinBtn = document.getElementById("joinBtn");
+        const notJoinBtn = document.getElementById("notJoinBtn");
+        const willJoinInput = document.getElementById("will_join");
+
+        joinBtn.onclick = () => {
+            joinBtn.classList.add("active");
+            notJoinBtn.classList.remove("active");
+            willJoinInput.value = 1;
+        };
+
+        notJoinBtn.onclick = () => {
+            notJoinBtn.classList.add("active");
+            joinBtn.classList.remove("active");
+            willJoinInput.value = 0;
+        };
+
+
+        /* =========================
+           その他
+        ========================= */
+        const otherInput = document.getElementById("otherInput");
+
+        document.querySelectorAll('input[name="place"]').forEach(radio => {
+            radio.addEventListener("change", () => {
+                if (radio.value === "other") {
+                    otherInput.disabled = false;
+                } else {
+                    otherInput.disabled = true;
+                    otherInput.value = "";
+                }
+            });
+        });
+
+
+        /* =========================
+           日付（7日生成）
+        ========================= */
+        const container = document.getElementById("dateContainer");
+        const today = new Date();
+
+        for (let i = 0; i < 7; i++) {
+            const d = new Date();
+            d.setDate(today.getDate() + i);
+
+            const value = `${d.getMonth() + 1}/${d.getDate()}`;
+
+            const label = document.createElement("label");
+            label.className = "date-option";
+
+            label.innerHTML = `
+    <input type="checkbox" name="date" value="${value}">
+    <span class="date-box">${value}</span>
+`;
+
+            const input = label.querySelector("input");
+
+            input.addEventListener("change", () => {
+                label.classList.toggle("selected", input.checked);
+            });
+
+            container.appendChild(label);
         }
-    });
-});
 
 
-/* =========================
-   日付（7日生成）
-========================= */
-const container = document.getElementById("dateContainer");
-const today = new Date();
-
-for (let i = 0; i < 7; i++) {
-    const d = new Date();
-    d.setDate(today.getDate() + i);
-
-    const value = `${d.getMonth() + 1}/${d.getDate()}`;
-
-    const label = document.createElement("label");
-    label.className = "date-option";
-
-    label.innerHTML = `
-        <input type="checkbox" value="${value}">
-        <span class="date-box">${value}</span>
-    `;
-
-    label.addEventListener("click", () => {
-        const input = label.querySelector("input");
-        input.checked = !input.checked;
-        label.classList.toggle("selected", input.checked);
-    });
-
-    container.appendChild(label);
-}
 
 
-/* =========================
-   送信前
-========================= */
-document.querySelector("form").addEventListener("submit", () => {
 
-    const dates = Array.from(
-        document.querySelectorAll(".date-option input:checked")
-    ).map(i => i.value);
-
-    document.getElementById("dateInput").value = dates.join(",");
-
-});
-</script>
+    </script>
 
 </body>
+
 </html>
