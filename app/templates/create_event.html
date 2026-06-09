@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>イベント作成</title>
+
+    <link rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+    <main class="main-content">
+
+        <form method="POST" action="/create_event">
+
+            <!-- イベント名 -->
+            <section class="form-section">
+
+                <h2>イベント名</h2>
+
+                <input
+                    type="text"
+                    name="title"
+                    class="form-input"
+                    placeholder="例：6月飲み会"
+                    required>
+
+            </section>
+
+
+            <!-- 場所 -->
+            <section class="form-section">
+
+                <h2>場所候補（複数選択）</h2>
+
+                <div class="location-options">
+
+                    <label class="checkbox-option">
+                        <input
+                            type="checkbox"
+                            name="place"
+                            value="名古屋">
+                        <span>名古屋</span>
+                    </label>
+
+                    <label class="checkbox-option">
+                        <input
+                            type="checkbox"
+                            name="place"
+                            value="栄">
+                        <span>栄</span>
+                    </label>
+
+                    <label class="checkbox-option">
+                        <input
+                            type="checkbox"
+                            name="place"
+                            value="伏見">
+                        <span>伏見</span>
+                    </label>
+
+                    <label class="checkbox-option">
+                        <input
+                            type="checkbox"
+                            id="otherPlaceCheck">
+                        <span>その他</span>
+                    </label>
+
+                    <input
+                        type="text"
+                        id="otherPlaceInput"
+                        class="other-input"
+                        placeholder="場所を入力"
+                        disabled>
+
+                </div>
+
+            </section>
+
+
+            <!-- 日程 -->
+            <section class="form-section">
+
+                <h2>日程候補（複数選択）</h2>
+
+                <div
+                    id="dateContainer"
+                    class="date-options">
+                </div>
+
+            </section>
+
+
+            <!-- 時間 -->
+            <section class="form-section">
+
+                <h2>時間候補（複数選択）</h2>
+
+                <div
+                    id="timeContainer"
+                    class="date-options">
+                </div>
+
+            </section>
+
+
+            <!-- hidden -->
+            <input
+                type="hidden"
+                name="all_places"
+                id="all_places">
+
+            <input
+                type="hidden"
+                name="all_dates"
+                id="all_dates">
+
+            <input
+                type="hidden"
+                name="all_times"
+                id="all_times">
+
+
+            <!-- 作成 -->
+            <section class="form-section">
+
+                <button
+                    type="submit"
+                    class="btn-submit">
+
+                    イベントを作成
+
+                </button>
+
+            </section>
+
+        </form>
+
+    </main>
+
+
+    <script>
+
+        /* ==========================
+           その他場所
+        ========================== */
+
+        const otherCheck =
+            document.getElementById(
+                "otherPlaceCheck"
+            );
+
+        const otherInput =
+            document.getElementById(
+                "otherPlaceInput"
+            );
+
+        otherCheck.addEventListener(
+            "change",
+            () => {
+
+                otherInput.disabled =
+                    !otherCheck.checked;
+
+                if (!otherCheck.checked) {
+
+                    otherInput.value = "";
+
+                }
+
+            }
+        );
+
+
+        /* ==========================
+           日付生成
+        ========================== */
+
+        const dateContainer =
+            document.getElementById(
+                "dateContainer"
+            );
+
+        const today =
+            new Date();
+
+        for (let i = 0; i < 7; i++) {
+
+            const d =
+                new Date();
+
+            d.setDate(
+                today.getDate() + i
+            );
+
+            const value =
+                `${d.getMonth() + 1}/${d.getDate()}`;
+
+            const label =
+                document.createElement(
+                    "label"
+                );
+
+            label.className =
+                "date-option";
+
+            label.innerHTML = `
+                <input
+                    type="checkbox"
+                    value="${value}">
+                <span class="date-box">
+                    ${value}
+                </span>
+            `;
+
+            const input =
+                label.querySelector(
+                    "input"
+                );
+
+            input.addEventListener(
+                "change",
+                () => {
+
+                    label.classList.toggle(
+                        "selected",
+                        input.checked
+                    );
+
+                }
+            );
+
+            dateContainer.appendChild(
+                label
+            );
+
+        }
+
+
+        /* ==========================
+           時間生成
+        ========================== */
+
+        const times = [
+
+            "18:00-20:00",
+            "19:00-21:00",
+            "20:00-22:00",
+            "21:00-23:00"
+
+        ];
+
+        const timeContainer =
+            document.getElementById(
+                "timeContainer"
+            );
+
+        times.forEach(time => {
+
+            const label =
+                document.createElement(
+                    "label"
+                );
+
+            label.className =
+                "date-option";
+
+            label.innerHTML = `
+                <input
+                    type="checkbox"
+                    value="${time}">
+                <span class="date-box">
+                    ${time}
+                </span>
+            `;
+
+            const input =
+                label.querySelector(
+                    "input"
+                );
+
+            input.addEventListener(
+                "change",
+                () => {
+
+                    label.classList.toggle(
+                        "selected",
+                        input.checked
+                    );
+
+                }
+            );
+
+            timeContainer.appendChild(
+                label
+            );
+
+        });
+
+
+        /* ==========================
+           送信前処理
+        ========================== */
+
+        document
+            .querySelector("form")
+            .addEventListener(
+                "submit",
+                (e) => {
+
+                    const places = [];
+
+                    document
+                        .querySelectorAll(
+                            'input[name="place"]:checked'
+                        )
+                        .forEach(
+                            item => {
+
+                                places.push(
+                                    item.value
+                                );
+
+                            }
+                        );
+
+                    if (
+                        otherCheck.checked &&
+                        otherInput.value.trim()
+                    ) {
+
+                        places.push(
+                            otherInput.value.trim()
+                        );
+
+                    }
+
+                    const dates =
+                        Array.from(
+                            dateContainer.querySelectorAll(
+                                "input:checked"
+                            )
+                        ).map(
+                            item => item.value
+                        );
+
+                    const selectedTimes =
+                        Array.from(
+                            timeContainer.querySelectorAll(
+                                "input:checked"
+                            )
+                        ).map(
+                            item => item.value
+                        );
+
+                    if (
+                        places.length === 0 ||
+                        dates.length === 0 ||
+                        selectedTimes.length === 0
+                    ) {
+
+                        e.preventDefault();
+
+                        alert(
+                            "場所・日程・時間を1つ以上選択してください"
+                        );
+
+                        return;
+
+                    }
+
+                    document
+                        .getElementById(
+                            "all_places"
+                        ).value =
+                        places.join(",");
+
+                    document
+                        .getElementById(
+                            "all_dates"
+                        ).value =
+                        dates.join(",");
+
+                    document
+                        .getElementById(
+                            "all_times"
+                        ).value =
+                        selectedTimes.join(",");
+
+                }
+            );
+
+    </script>
+
+</body>
+
+</html>
