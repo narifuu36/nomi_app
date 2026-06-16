@@ -423,9 +423,9 @@ def result():
         username=session["username"],
         event=event,
         participants=participants,
-        place_results=place_counter.items(),
-        date_results=date_counter.items(),
-        time_results=time_counter.items()
+        place_results=list(place_counter.items()),
+        date_results=list(date_counter.items()),
+        time_results=list(time_counter.items())
     )
 
 # ==========================
@@ -521,7 +521,7 @@ def reset_password():
         )
 
     return render_template("reset_password.html")
-    
+
 @app.route("/logout")
 def logout():
 

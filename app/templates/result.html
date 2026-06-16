@@ -8,6 +8,39 @@
 
     <link rel="stylesheet"
         href="{{ url_for('static', filename='css/style.css') }}">
+
+    <style>
+        .vote-bar-item {
+            margin-bottom: 18px;
+        }
+
+        .vote-bar-top {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .vote-bar-bg {
+            width: 100%;
+            height: 16px;
+            background: #e5e7eb;
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        .vote-bar-fill {
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                #f59e0b,
+                #f97316
+            );
+            border-radius: 999px;
+            transition: width .3s;
+        }
+    </style>
 </head>
 
 <body>
@@ -124,15 +157,12 @@
         <!-- 投票結果 -->
         <div class="voting-results-grid">
 
-
             <!-- 場所 -->
             <section class="result-card">
 
                 <div class="result-card-header">
 
-                    <span class="section-icon">
-                        📍
-                    </span>
+                    <span class="section-icon">📍</span>
 
                     <h3 class="result-card-title">
                         場所の投票結果
@@ -140,18 +170,29 @@
 
                 </div>
 
+                {% set max_place =
+                (place_results | map(attribute=1) | max)
+                if place_results else 1 %}
+
                 <div class="vote-bars">
 
                     {% for place, count in place_results %}
 
                     <div class="vote-bar-item">
 
-                        <div class="vote-bar-label">
-                            {{ place }}
+                        <div class="vote-bar-top">
+                            <span>{{ place }}</span>
+                            <span>{{ count }}票</span>
                         </div>
 
-                        <div class="vote-bar-stats">
-                            {{ count }}票
+                        <div class="vote-bar-bg">
+
+                            <div
+                                class="vote-bar-fill"
+                                style="width: {{ (count / max_place * 100)|round }}%;">
+
+                            </div>
+
                         </div>
 
                     </div>
@@ -172,9 +213,7 @@
 
                 <div class="result-card-header">
 
-                    <span class="section-icon">
-                        📅
-                    </span>
+                    <span class="section-icon">📅</span>
 
                     <h3 class="result-card-title">
                         日程の投票結果
@@ -182,18 +221,29 @@
 
                 </div>
 
+                {% set max_date =
+                (date_results | map(attribute=1) | max)
+                if date_results else 1 %}
+
                 <div class="vote-bars">
 
                     {% for date, count in date_results %}
 
                     <div class="vote-bar-item">
 
-                        <div class="vote-bar-label">
-                            {{ date }}
+                        <div class="vote-bar-top">
+                            <span>{{ date }}</span>
+                            <span>{{ count }}票</span>
                         </div>
 
-                        <div class="vote-bar-stats">
-                            {{ count }}票
+                        <div class="vote-bar-bg">
+
+                            <div
+                                class="vote-bar-fill"
+                                style="width: {{ (count / max_date * 100)|round }}%;">
+
+                            </div>
+
                         </div>
 
                     </div>
@@ -214,9 +264,7 @@
 
                 <div class="result-card-header">
 
-                    <span class="section-icon">
-                        🕐
-                    </span>
+                    <span class="section-icon">🕐</span>
 
                     <h3 class="result-card-title">
                         時間の投票結果
@@ -224,18 +272,29 @@
 
                 </div>
 
+                {% set max_time =
+                (time_results | map(attribute=1) | max)
+                if time_results else 1 %}
+
                 <div class="vote-bars">
 
                     {% for time, count in time_results %}
 
                     <div class="vote-bar-item">
 
-                        <div class="vote-bar-label">
-                            {{ time }}
+                        <div class="vote-bar-top">
+                            <span>{{ time }}</span>
+                            <span>{{ count }}票</span>
                         </div>
 
-                        <div class="vote-bar-stats">
-                            {{ count }}票
+                        <div class="vote-bar-bg">
+
+                            <div
+                                class="vote-bar-fill"
+                                style="width: {{ (count / max_time * 100)|round }}%;">
+
+                            </div>
+
                         </div>
 
                     </div>
@@ -253,7 +312,7 @@
         </div>
 
 
-        <!-- おすすめ -->
+        <!-- 集計状況 -->
         <section class="recommended-plan-card">
 
             <div class="recommended-header">
@@ -289,7 +348,6 @@
                 投票画面へ戻る
 
             </a>
-
 
             {% if event.is_active %}
 
