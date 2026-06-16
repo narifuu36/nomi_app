@@ -16,15 +16,25 @@
             <span class="header-title">飲み会調整ツール</span>
         </div>
 
-        <div class="header-user">
+        <div class="header-user dropdown">
+
             <span class="user-icon">👤</span>
 
-            <!-- Flaskのsession対応 -->
             <span class="user-name">
                 {{ username }}
             </span>
 
             <span class="dropdown-arrow">▼</span>
+
+            <div class="dropdown-menu">
+
+
+                <a href="{{ url_for('logout') }}">
+                    ログアウト
+                </a>
+
+            </div>
+
         </div>
     </header>
 

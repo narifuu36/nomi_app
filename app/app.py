@@ -461,6 +461,67 @@ def complete():
 # LOGOUT
 # ==========================
 
+@app.route("/reset_password", methods=["GET", "POST"])
+def reset_password():
+
+    if request.method == "POST":
+
+        username = request.form["username"]
+        new_password = request.form["new_password"]
+        confirm_password = request.form["confirm_password"]
+
+        if new_password != confirm_password:
+
+            return render_template(
+                "reset_password.html",
+                error="パスワードが一致しません"
+            )
+
+        conn = get_db()
+
+        user = conn.execute(
+            """
+            SELECT *
+            FROM users
+            WHERE username = ?
+            """,
+            (username,)
+        ).fetchone()
+
+        if not user:
+
+            conn.close()
+
+            return render_template(
+                "reset_password.html",
+                error="ユーザーが存在しません"
+            )
+
+        new_hash = hashlib.sha256(
+            new_password.encode()
+        ).hexdigest()
+
+        conn.execute(
+            """
+            UPDATE users
+            SET password_hash = ?
+            WHERE id = ?
+            """,
+            (
+                new_hash,
+                user["id"]
+            )
+        )
+
+        conn.commit()
+        conn.close()
+
+        return redirect(
+            url_for("login", reset=1)
+        )
+
+    return render_template("reset_password.html")
+    
 @app.route("/logout")
 def logout():
 
