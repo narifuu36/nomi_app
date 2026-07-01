@@ -1,12 +1,14 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, flash
 import sqlite3
 import hashlib
 from collections import Counter
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 app.secret_key = "secret-key"
 
 DB_NAME = "nomikai.db"
+
 
 # ==========================
 # DB接続
@@ -17,12 +19,51 @@ def get_db():
     conn.row_factory = sqlite3.Row
     return conn
 
+
 # ==========================
 # ログイン確認
 # ==========================
 
 def login_required():
     return "username" in session
+
+
+
+def auto_close_event():
+
+    conn = get_db()
+
+    event = conn.execute("""
+        SELECT *
+        FROM events
+        WHERE is_active = 1
+        ORDER BY id DESC
+        LIMIT 1
+    """).fetchone()
+
+    if event:
+
+        created = datetime.strptime(
+            event["created_at"],
+            "%Y-%m-%d %H:%M:%S"
+        )
+
+        end_time = created + timedelta(minutes=2)
+
+        if datetime.now() >= end_time:
+
+            conn.execute("""
+                UPDATE events
+                SET
+                    is_active = 0,
+                    finished_at = CURRENT_TIMESTAMP
+                WHERE id=?
+            """, (event["id"],))
+
+            conn.commit()
+
+    conn.close()
+
 
 # ==========================
 # TOP
@@ -31,10 +72,13 @@ def login_required():
 @app.route("/")
 def home():
 
+    auto_close_event()
+
     if not login_required():
         return redirect(url_for("login"))
 
     return redirect(url_for("index"))
+
 
 # ==========================
 # INDEX
@@ -43,6 +87,8 @@ def home():
 @app.route("/index")
 def index():
 
+    auto_close_event()
+
     if not login_required():
         return redirect(url_for("login"))
 
@@ -50,8 +96,12 @@ def index():
 
     event = conn.execute(
         """
-        SELECT *
+        SELECT
+            events.*,
+            users.username AS host_name
         FROM events
+        JOIN users
+        ON events.host_user_id = users.id
         WHERE is_active = 1
         ORDER BY id DESC
         LIMIT 1
@@ -63,8 +113,10 @@ def index():
     return render_template(
         "index.html",
         username=session["username"],
-        event_exists=(event is not None)
+        event_exists=(event is not None),
+        event=event
     )
+
 
 # ==========================
 # LOGIN
@@ -91,7 +143,10 @@ def login():
             WHERE username = ?
             AND password_hash = ?
             """,
-            (username, password_hash)
+            (
+                username,
+                password_hash
+            )
         ).fetchone()
 
         conn.close()
@@ -100,9 +155,9 @@ def login():
 
             session["username"] = user["username"]
 
-            return redirect(
-                url_for("index")
-            )
+            flash("ログインしました")
+
+            return redirect(url_for("index"))
 
         return render_template(
             "login.html",
@@ -111,8 +166,10 @@ def login():
 
     return render_template(
         "login.html",
-        registered=request.args.get("registered")
+        registered=request.args.get("registered"),
+        reset=request.args.get("reset")
     )
+
 
 # ==========================
 # SIGNUP
@@ -165,7 +222,10 @@ def signup():
                 username,
                 password_hash
             )
-            VALUES (?, ?)
+            VALUES
+            (
+                ?, ?
+            )
             """,
             (
                 username,
@@ -187,15 +247,37 @@ def signup():
         "signup.html"
     )
 
-# ==========================
+    # ==========================
 # CREATE EVENT
 # ==========================
 
 @app.route("/create_event", methods=["GET", "POST"])
 def create_event():
 
+    auto_close_event()
+
     if not login_required():
         return redirect(url_for("login"))
+
+    conn = get_db()
+
+    # 同時作成防止
+    active_event = conn.execute(
+        """
+        SELECT *
+        FROM events
+        WHERE is_active = 1
+        LIMIT 1
+        """
+    ).fetchone()
+
+    if active_event:
+
+        conn.close()
+
+        flash("現在募集中のイベントがあります。")
+
+        return redirect(url_for("event"))
 
     if request.method == "POST":
 
@@ -205,13 +287,11 @@ def create_event():
         dates = request.form.get("all_dates", "")
         times = request.form.get("all_times", "")
 
-        conn = get_db()
-
         user = conn.execute(
             """
             SELECT *
             FROM users
-            WHERE username = ?
+            WHERE username=?
             """,
             (session["username"],)
         ).fetchone()
@@ -226,7 +306,10 @@ def create_event():
                 dates,
                 times
             )
-            VALUES (?, ?, ?, ?, ?)
+            VALUES
+            (
+                ?, ?, ?, ?, ?
+            )
             """,
             (
                 title,
@@ -240,13 +323,16 @@ def create_event():
         conn.commit()
         conn.close()
 
-        return redirect(
-            url_for("event")
-        )
+        flash("イベントを作成しました")
+
+        return redirect(url_for("event"))
+
+    conn.close()
 
     return render_template(
         "create_event.html"
     )
+
 
 # ==========================
 # EVENT
@@ -255,6 +341,8 @@ def create_event():
 @app.route("/event", methods=["GET", "POST"])
 def event():
 
+    auto_close_event()
+
     if not login_required():
         return redirect(url_for("login"))
 
@@ -262,10 +350,14 @@ def event():
 
     event = conn.execute(
         """
-        SELECT *
+        SELECT
+            events.*,
+            users.username AS host_name
         FROM events
-        WHERE is_active = 1
-        ORDER BY id DESC
+        JOIN users
+        ON events.host_user_id = users.id
+        WHERE events.is_active = 1
+        ORDER BY events.id DESC
         LIMIT 1
         """
     ).fetchone()
@@ -274,9 +366,23 @@ def event():
 
         conn.close()
 
-        return redirect(
-            url_for("create_event")
-        )
+        return redirect(url_for("create_event"))
+
+    # 残り時間計算
+    created = datetime.strptime(
+        event["created_at"],
+        "%Y-%m-%d %H:%M:%S"
+    )
+
+    end_time = created + timedelta(minutes=2)
+
+    remain = end_time - datetime.now()
+
+    if remain.total_seconds() < 0:
+        remain = timedelta(seconds=0)
+
+    hours = remain.seconds // 3600
+    minutes = (remain.seconds % 3600) // 60
 
     if request.method == "POST":
 
@@ -284,7 +390,7 @@ def event():
             """
             SELECT *
             FROM users
-            WHERE username = ?
+            WHERE username=?
             """,
             (session["username"],)
         ).fetchone()
@@ -293,8 +399,8 @@ def event():
             """
             SELECT *
             FROM votes
-            WHERE event_id = ?
-            AND user_id = ?
+            WHERE event_id=?
+            AND user_id=?
             """,
             (
                 event["id"],
@@ -302,12 +408,13 @@ def event():
             )
         ).fetchone()
 
+        # 重複投票防止
         if already:
 
             conn.execute(
                 """
                 DELETE FROM votes
-                WHERE id = ?
+                WHERE id=?
                 """,
                 (already["id"],)
             )
@@ -339,23 +446,34 @@ def event():
         conn.close()
 
         return redirect(
-            url_for("result")
-        )
+    url_for(
+        "result",
+        voted=1
+    )
+)
+
+    conn.close()
 
     return render_template(
-        "event.html",
-        event=event,
-        places=event["places"].split(",") if event["places"] else [],
-        dates=event["dates"].split(",") if event["dates"] else [],
-        times=event["times"].split(",") if event["times"] else []
-    )
+    "event.html",
+    username=session["username"],
+    event=event,
+    host_name=event["host_name"],
+    remain_hours=hours,
+    remain_minutes=minutes,
+    places=event["places"].split(",") if event["places"] else [],
+    dates=event["dates"].split(",") if event["dates"] else [],
+    times=event["times"].split(",") if event["times"] else []
+)
 
-# ==========================
+    # ==========================
 # RESULT
 # ==========================
 
 @app.route("/result")
 def result():
+
+    auto_close_event()
 
     if not login_required():
         return redirect(url_for("login"))
@@ -364,10 +482,14 @@ def result():
 
     event = conn.execute(
         """
-        SELECT *
+        SELECT
+            events.*,
+            users.username AS host_name
         FROM events
-        WHERE is_active = 1
-        ORDER BY id DESC
+        JOIN users
+        ON events.host_user_id = users.id
+        WHERE events.is_active = 1
+        ORDER BY events.id DESC
         LIMIT 1
         """
     ).fetchone()
@@ -376,13 +498,13 @@ def result():
 
         conn.close()
 
-        return redirect(
-            url_for("index")
-        )
+        return redirect(url_for("index"))
 
     votes = conn.execute(
         """
-        SELECT votes.*, users.username
+        SELECT
+            votes.*,
+            users.username
         FROM votes
         JOIN users
         ON votes.user_id = users.id
@@ -400,33 +522,59 @@ def result():
     for vote in votes:
 
         if vote["is_join"]:
-            participants.append(
-                vote["username"]
-            )
+            participants.append(vote["username"])
 
-        for p in vote["place"].split(","):
-            if p:
-                place_counter[p] += 1
+        if vote["place"]:
+            for p in vote["place"].split(","):
+                if p:
+                    place_counter[p] += 1
 
-        for d in vote["date"].split(","):
-            if d:
-                date_counter[d] += 1
+        if vote["date"]:
+            for d in vote["date"].split(","):
+                if d:
+                    date_counter[d] += 1
 
-        for t in vote["time_slot"].split(","):
-            if t:
-                time_counter[t] += 1
+        if vote["time_slot"]:
+            for t in vote["time_slot"].split(","):
+                if t:
+                    time_counter[t] += 1
+
+    created = datetime.strptime(
+        event["created_at"],
+        "%Y-%m-%d %H:%M:%S"
+    )
+
+    end_time = created + timedelta(minutes=2)
+
+    remain = end_time - datetime.now()
+
+    if remain.total_seconds() < 0:
+        remain = timedelta(seconds=0)
+
+    hours = remain.seconds // 3600
+    minutes = (remain.seconds % 3600) // 60
+
+    # ログインユーザーが主催者か判定
+    is_host = (
+        session["username"] ==
+        event["host_name"]
+    )
 
     conn.close()
 
     return render_template(
-        "result.html",
-        username=session["username"],
-        event=event,
-        participants=participants,
-        place_results=list(place_counter.items()),
-        date_results=list(date_counter.items()),
-        time_results=list(time_counter.items())
-    )
+    "result.html",
+    username=session["username"],
+    event=event,
+    host_name=event["host_name"],
+    participants=participants,
+    place_results=place_counter.items(),
+    date_results=date_counter.items(),
+    time_results=time_counter.items(),
+    voted=request.args.get("voted"),
+    is_host=is_host
+)
+
 
 # ==========================
 # COMPLETE
@@ -440,25 +588,54 @@ def complete():
 
     conn = get_db()
 
+    event = conn.execute(
+        """
+        SELECT
+            events.*,
+            users.username AS host_name
+        FROM events
+        JOIN users
+        ON events.host_user_id = users.id
+        WHERE is_active=1
+        LIMIT 1
+        """
+    ).fetchone()
+
+    if event is None:
+
+        conn.close()
+
+        return redirect(url_for("index"))
+
+    if event["host_name"] != session["username"]:
+
+        conn.close()
+
+        flash("主催者のみ終了できます")
+
+        return redirect(url_for("result"))
+
     conn.execute(
         """
         UPDATE events
         SET
-            is_active = 0,
-            finished_at = CURRENT_TIMESTAMP
-        WHERE is_active = 1
-        """
+            is_active=0,
+            finished_at=CURRENT_TIMESTAMP
+        WHERE id=?
+        """,
+        (event["id"],)
     )
 
     conn.commit()
     conn.close()
 
-    return redirect(
-        url_for("index")
-    )
+    flash("イベントを終了しました")
+
+    return redirect(url_for("index"))
+
 
 # ==========================
-# LOGOUT
+# RESET PASSWORD
 # ==========================
 
 @app.route("/reset_password", methods=["GET", "POST"])
@@ -477,18 +654,22 @@ def reset_password():
                 error="パスワードが一致しません"
             )
 
+        password_hash = hashlib.sha256(
+            new_password.encode()
+        ).hexdigest()
+
         conn = get_db()
 
         user = conn.execute(
             """
             SELECT *
             FROM users
-            WHERE username = ?
+            WHERE username=?
             """,
             (username,)
         ).fetchone()
 
-        if not user:
+        if user is None:
 
             conn.close()
 
@@ -497,19 +678,15 @@ def reset_password():
                 error="ユーザーが存在しません"
             )
 
-        new_hash = hashlib.sha256(
-            new_password.encode()
-        ).hexdigest()
-
         conn.execute(
             """
             UPDATE users
-            SET password_hash = ?
-            WHERE id = ?
+            SET password_hash=?
+            WHERE username=?
             """,
             (
-                new_hash,
-                user["id"]
+                password_hash,
+                username
             )
         )
 
@@ -517,19 +694,34 @@ def reset_password():
         conn.close()
 
         return redirect(
-            url_for("login", reset=1)
+            url_for(
+                "login",
+                reset=1
+            )
         )
 
-    return render_template("reset_password.html")
+    return render_template(
+        "reset_password.html"
+    )
+
+
+# ==========================
+# LOGOUT
+# ==========================
 
 @app.route("/logout")
 def logout():
 
     session.clear()
 
-    return redirect(
-        url_for("login")
-    )
+    flash("ログアウトしました")
+
+    return redirect(url_for("login"))
+
+
+# ==========================
+# MAIN
+# ==========================
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -6,12 +6,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>イベント作成</title>
 
-    <link rel="stylesheet"
-        href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 
 <body>
 
+
+    <header class="header">
+        <div class="header-logo">
+            <span class="beer-icon">🍻</span>
+            <span class="header-title">飲み会調整ツール</span>
+        </div>
+
+        <div class="header-user dropdown">
+
+            <span class="user-icon">👤</span>
+
+            <span class="user-name">
+                {{ username }}
+            </span>
+
+            <span class="dropdown-arrow">▼</span>
+
+            <div class="dropdown-menu">
+
+
+                <a href="{{ url_for('logout') }}">
+                    ログアウト
+                </a>
+
+            </div>
+
+        </div>
+    </header>
     <main class="main-content">
 
         <form method="POST" action="/create_event">
@@ -21,12 +48,7 @@
 
                 <h2>イベント名</h2>
 
-                <input
-                    type="text"
-                    name="title"
-                    class="form-input"
-                    placeholder="例：6月飲み会"
-                    required>
+                <input type="text" name="title" class="form-input" placeholder="例：6月飲み会" required>
 
             </section>
 
@@ -39,42 +61,26 @@
                 <div class="location-options">
 
                     <label class="checkbox-option">
-                        <input
-                            type="checkbox"
-                            name="place"
-                            value="名古屋">
+                        <input type="checkbox" name="place" value="名古屋">
                         <span>名古屋</span>
                     </label>
 
                     <label class="checkbox-option">
-                        <input
-                            type="checkbox"
-                            name="place"
-                            value="栄">
+                        <input type="checkbox" name="place" value="栄">
                         <span>栄</span>
                     </label>
 
                     <label class="checkbox-option">
-                        <input
-                            type="checkbox"
-                            name="place"
-                            value="伏見">
+                        <input type="checkbox" name="place" value="伏見">
                         <span>伏見</span>
                     </label>
 
                     <label class="checkbox-option">
-                        <input
-                            type="checkbox"
-                            id="otherPlaceCheck">
+                        <input type="checkbox" id="otherPlaceCheck">
                         <span>その他</span>
                     </label>
 
-                    <input
-                        type="text"
-                        id="otherPlaceInput"
-                        class="other-input"
-                        placeholder="場所を入力"
-                        disabled>
+                    <input type="text" id="otherPlaceInput" class="other-input" placeholder="場所を入力" disabled>
 
                 </div>
 
@@ -86,9 +92,7 @@
 
                 <h2>日程候補（複数選択）</h2>
 
-                <div
-                    id="dateContainer"
-                    class="date-options">
+                <div id="dateContainer" class="date-options">
                 </div>
 
             </section>
@@ -99,37 +103,24 @@
 
                 <h2>時間候補（複数選択）</h2>
 
-                <div
-                    id="timeContainer"
-                    class="date-options">
+                <div id="timeContainer" class="date-options">
                 </div>
 
             </section>
 
 
             <!-- hidden -->
-            <input
-                type="hidden"
-                name="all_places"
-                id="all_places">
+            <input type="hidden" name="all_places" id="all_places">
 
-            <input
-                type="hidden"
-                name="all_dates"
-                id="all_dates">
+            <input type="hidden" name="all_dates" id="all_dates">
 
-            <input
-                type="hidden"
-                name="all_times"
-                id="all_times">
+            <input type="hidden" name="all_times" id="all_times">
 
 
             <!-- 作成 -->
             <section class="form-section">
 
-                <button
-                    type="submit"
-                    class="btn-submit">
+                <button type="submit" class="btn-submit">
 
                     イベントを作成
 

@@ -6,8 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>集計結果 - {{ event.title }}</title>
 
-    <link rel="stylesheet"
-        href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 
     <style>
         .vote-bar-item {
@@ -32,11 +31,9 @@
 
         .vote-bar-fill {
             height: 100%;
-            background: linear-gradient(
-                90deg,
-                #f59e0b,
-                #f97316
-            );
+            background: linear-gradient(90deg,
+                    #f59e0b,
+                    #f97316);
             border-radius: 999px;
             transition: width .3s;
         }
@@ -46,21 +43,31 @@
 <body>
 
     <header class="header">
-
         <div class="header-logo">
             <span class="beer-icon">🍻</span>
-            <span class="header-title">
-                飲み会調整ツール
-            </span>
+            <span class="header-title">飲み会調整ツール</span>
         </div>
 
-        <div class="header-user">
+        <div class="header-user dropdown">
+
             <span class="user-icon">👤</span>
+
             <span class="user-name">
                 {{ username }}
             </span>
-        </div>
 
+            <span class="dropdown-arrow">▼</span>
+
+            <div class="dropdown-menu">
+
+
+                <a href="{{ url_for('logout') }}">
+                    ログアウト
+                </a>
+
+            </div>
+
+        </div>
     </header>
 
 
@@ -103,7 +110,11 @@
 
         </section>
 
-
+        {% if voted %}
+        <div class="success-notice">
+            ✅ 投票が送信されました
+        </div>
+        {% endif %}
         <!-- 参加者 -->
         <section class="result-section">
 
@@ -187,9 +198,7 @@
 
                         <div class="vote-bar-bg">
 
-                            <div
-                                class="vote-bar-fill"
-                                style="width: {{ (count / max_place * 100)|round }}%;">
+                            <div class="vote-bar-fill" style="width: {{ (count / max_place * 100)|round }}%;">
 
                             </div>
 
@@ -238,9 +247,7 @@
 
                         <div class="vote-bar-bg">
 
-                            <div
-                                class="vote-bar-fill"
-                                style="width: {{ (count / max_date * 100)|round }}%;">
+                            <div class="vote-bar-fill" style="width: {{ (count / max_date * 100)|round }}%;">
 
                             </div>
 
@@ -289,9 +296,7 @@
 
                         <div class="vote-bar-bg">
 
-                            <div
-                                class="vote-bar-fill"
-                                style="width: {{ (count / max_time * 100)|round }}%;">
+                            <div class="vote-bar-fill" style="width: {{ (count / max_time * 100)|round }}%;">
 
                             </div>
 
@@ -341,19 +346,15 @@
         <!-- ボタン -->
         <div class="bottom-actions-grid">
 
-            <a
-                href="{{ url_for('event') }}"
-                class="btn-submit">
+            <a href="{{ url_for('event') }}" class="btn-submit">
 
                 投票画面へ戻る
 
             </a>
 
-            {% if event.is_active %}
+            {% if event.is_active and username == host_name %}
 
-            <a
-                href="{{ url_for('complete') }}"
-                class="btn-submit">
+            <a href="{{ url_for('complete') }}" class="btn-submit">
 
                 👑 完了（締め切り）
 

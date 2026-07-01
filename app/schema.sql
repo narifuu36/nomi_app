@@ -24,7 +24,7 @@ CREATE TABLE events (
 
     is_active BOOLEAN NOT NULL DEFAULT 1,
 
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at DATETIME NOT NULL DEFAULT (datetime('now','localtime')),
 
     finished_at DATETIME,
 

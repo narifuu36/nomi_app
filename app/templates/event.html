@@ -2,48 +2,129 @@
 <html lang="ja">
 
 <head>
+
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>{{ event.title }}</title>
 
-    <link rel="stylesheet"
-        href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
 </head>
 
 <body>
 
+    <header class="header">
+        <div class="header-logo">
+            <span class="beer-icon">🍻</span>
+            <span class="header-title">飲み会調整ツール</span>
+        </div>
+
+        <div class="header-user dropdown">
+
+            <span class="user-icon">👤</span>
+
+            <span class="user-name">
+                {{ username }}
+            </span>
+
+            <span class="dropdown-arrow">▼</span>
+
+            <div class="dropdown-menu">
+
+
+                <a href="{{ url_for('logout') }}">
+                    ログアウト
+                </a>
+
+            </div>
+
+        </div>
+    </header>
+
+</div>
+
+
     <main class="main-content">
 
-        <section class="form-section">
+        <!-- Flash -->
+
+        {% with messages = get_flashed_messages() %}
+
+        {% if messages %}
+
+        <div class="success-notice">
+
+            {{ messages[0] }}
+
+        </div>
+
+        {% endif %}
+
+        {% endwith %}
+
+
+        <!-- イベント情報 -->
+
+        <section class="result-header-card">
 
             <h1>
+
                 {{ event.title }}
+
             </h1>
+
+            <p>
+
+                主催者：
+                <strong>
+
+                    {{ host_name }}
+
+                </strong>
+
+            </p>
+
+            <p>
+
+                残り時間：
+
+                <strong>
+
+                    {{ remain_hours }}時間
+
+                    {{ remain_minutes }}分
+
+                </strong>
+
+            </p>
 
         </section>
 
-        <form method="POST" action="/event">
+
+        <form method="POST" action="{{ url_for('event') }}">
+
 
             <!-- 参加可否 -->
+
             <section class="form-section">
 
-                <h2>参加可否</h2>
+                <h2>
+
+                    参加しますか？
+
+                </h2>
 
                 <div class="participation-buttons">
 
-                    <button
-                        type="button"
-                        class="btn-participate active"
-                        id="joinBtn">
+                    <button type="button" id="joinBtn" class="btn-participate active">
 
                         参加する
 
                     </button>
 
-                    <button
-                        type="button"
-                        class="btn-participate"
-                        id="notJoinBtn">
+                    <button type="button" id="notJoinBtn" class="btn-participate">
 
                         参加しない
 
@@ -51,108 +132,114 @@
 
                 </div>
 
-                <input
-                    type="hidden"
-                    name="will_join"
-                    id="will_join"
-                    value="1">
+                <input type="hidden" id="will_join" name="will_join" value="1">
 
             </section>
 
 
-            <!-- 場所 -->
+            <!-- 詳細入力 -->
+
+            <div id="voteArea">
+                <!-- ==========================
+             場所
+        ========================== -->
+
+                <section class="form-section">
+
+                    <h2>場所（複数選択）</h2>
+
+                    <div class="location-options">
+
+                        {% for place in places %}
+
+                        <label class="checkbox-option">
+
+                            <input type="checkbox" name="place" value="{{ place }}">
+
+                            <span>
+                                {{ place }}
+                            </span>
+
+                        </label>
+
+                        {% endfor %}
+
+                    </div>
+
+                </section>
+
+
+                <!-- ==========================
+             日程
+        ========================== -->
+
+                <section class="form-section">
+
+                    <h2>日程（複数選択）</h2>
+
+                    <div class="date-options">
+
+                        {% for date in dates %}
+
+                        <label class="date-option">
+
+                            <input type="checkbox" name="date" value="{{ date }}">
+
+                            <span class="date-box">
+
+                                {{ date }}
+
+                            </span>
+
+                        </label>
+
+                        {% endfor %}
+
+                    </div>
+
+                </section>
+
+
+                <!-- ==========================
+             時間
+        ========================== -->
+
+                <section class="form-section">
+
+                    <h2>時間（複数選択）</h2>
+
+                    <div class="date-options">
+
+                        {% for time in times %}
+
+                        <label class="date-option">
+
+                            <input type="checkbox" name="time_slot" value="{{ time }}">
+
+                            <span class="date-box">
+
+                                {{ time }}
+
+                            </span>
+
+                        </label>
+
+                        {% endfor %}
+
+                    </div>
+
+                </section>
+
+
+                <!-- ==========================
+             送信
+        ========================== -->
+
+            </div>
+
             <section class="form-section">
 
-                <h2>場所（複数選択）</h2>
-
-                <div class="location-options">
-
-                    {% for place in places %}
-
-                    <label class="checkbox-option">
-
-                        <input
-                            type="checkbox"
-                            name="place"
-                            value="{{ place }}">
-
-                        <span>
-                            {{ place }}
-                        </span>
-
-                    </label>
-
-                    {% endfor %}
-
-                </div>
-
-            </section>
-
-
-            <!-- 日程 -->
-            <section class="form-section">
-
-                <h2>日程（複数選択）</h2>
-
-                <div class="date-options">
-
-                    {% for date in dates %}
-
-                    <label class="date-option">
-
-                        <input
-                            type="checkbox"
-                            name="date"
-                            value="{{ date }}">
-
-                        <span class="date-box">
-                            {{ date }}
-                        </span>
-
-                    </label>
-
-                    {% endfor %}
-
-                </div>
-
-            </section>
-
-
-            <!-- 時間 -->
-            <section class="form-section">
-
-                <h2>時間（複数選択）</h2>
-
-                <div class="date-options">
-
-                    {% for time in times %}
-
-                    <label class="date-option">
-
-                        <input
-                            type="checkbox"
-                            name="time_slot"
-                            value="{{ time }}">
-
-                        <span class="date-box">
-                            {{ time }}
-                        </span>
-
-                    </label>
-
-                    {% endfor %}
-
-                </div>
-
-            </section>
-
-
-            <!-- 送信 -->
-            <section class="form-section">
-
-                <button
-                    type="submit"
-                    class="btn-submit">
+                <button type="submit" class="btn-submit">
 
                     投票する
 
@@ -161,165 +248,85 @@
             </section>
 
         </form>
+            <script>
 
-    </main>
+        // ==========================
+        // 要素取得
+        // ==========================
 
+        const joinBtn = document.getElementById("joinBtn");
+        const notJoinBtn = document.getElementById("notJoinBtn");
 
-    <script>
+        const willJoin =
+            document.getElementById("will_join");
 
-        /* =========================
-           参加可否
-        ========================= */
-
-        const joinBtn =
-            document.getElementById(
-                "joinBtn"
-            );
-
-        const notJoinBtn =
-            document.getElementById(
-                "notJoinBtn"
-            );
-
-        const willJoinInput =
-            document.getElementById(
-                "will_join"
-            );
-
-        joinBtn.addEventListener(
-            "click",
-            () => {
-
-                joinBtn.classList.add(
-                    "active"
-                );
-
-                notJoinBtn.classList.remove(
-                    "active"
-                );
-
-                willJoinInput.value = 1;
-
-            }
-        );
-
-        notJoinBtn.addEventListener(
-            "click",
-            () => {
-
-                notJoinBtn.classList.add(
-                    "active"
-                );
-
-                joinBtn.classList.remove(
-                    "active"
-                );
-
-                willJoinInput.value = 0;
-
-            }
-        );
+        const voteArea =
+            document.getElementById("voteArea");
 
 
-        /* =========================
-           日付・時間選択装飾
-        ========================= */
+        // ==========================
+        // 初期状態
+        // ==========================
+
+        voteArea.style.display = "block";
+
+
+        // ==========================
+        // 参加する
+        // ==========================
+
+        joinBtn.addEventListener("click", () => {
+
+            willJoin.value = 1;
+
+            voteArea.style.display = "block";
+
+            joinBtn.classList.add("active");
+            notJoinBtn.classList.remove("active");
+
+        });
+
+
+        // ==========================
+        // 参加しない
+        // ==========================
+
+        notJoinBtn.addEventListener("click", () => {
+
+            willJoin.value = 0;
+
+            voteArea.style.display = "none";
+
+            joinBtn.classList.remove("active");
+            notJoinBtn.classList.add("active");
+
+        });
+
+
+        // ==========================
+        // チェックボックスの色変更
+        // ==========================
 
         document
             .querySelectorAll(
-                ".date-option input"
+                ".date-option input,.checkbox-option input"
             )
-            .forEach(
-                input => {
+            .forEach(input => {
 
-                    input.addEventListener(
-                        "change",
-                        () => {
+                input.addEventListener("change", () => {
 
-                            input.parentElement
-                                .classList.toggle(
-                                    "selected",
-                                    input.checked
-                                );
-
-                        }
+                    input.parentElement.classList.toggle(
+                        "selected",
+                        input.checked
                     );
 
-                }
-            );
+                });
 
-
-        /* =========================
-           バリデーション
-        ========================= */
-
-        document
-            .querySelector("form")
-            .addEventListener(
-                "submit",
-                (e) => {
-
-                    const places =
-                        document.querySelectorAll(
-                            'input[name="place"]:checked'
-                        );
-
-                    const dates =
-                        document.querySelectorAll(
-                            'input[name="date"]:checked'
-                        );
-
-                    const times =
-                        document.querySelectorAll(
-                            'input[name="time_slot"]:checked'
-                        );
-
-                    if (
-                        places.length === 0
-                    ) {
-
-                        e.preventDefault();
-
-                        alert(
-                            "場所を選択してください"
-                        );
-
-                        return;
-
-                    }
-
-                    if (
-                        dates.length === 0
-                    ) {
-
-                        e.preventDefault();
-
-                        alert(
-                            "日程を選択してください"
-                        );
-
-                        return;
-
-                    }
-
-                    if (
-                        times.length === 0
-                    ) {
-
-                        e.preventDefault();
-
-                        alert(
-                            "時間を選択してください"
-                        );
-
-                        return;
-
-                    }
-
-                }
-            );
+            });
 
     </script>
+
+</main>
 
 </body>
 
