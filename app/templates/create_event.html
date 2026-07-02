@@ -2,34 +2,50 @@
 <html lang="ja">
 
 <head>
+
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>イベント作成</title>
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
 </head>
 
 <body>
 
+    <!-- ヘッダー -->
 
     <header class="header">
+
         <div class="header-logo">
-            <span class="beer-icon">🍻</span>
-            <span class="header-title">飲み会調整ツール</span>
+
+            <span class="beer-icon">
+                🍻
+            </span>
+
+            <span class="header-title">
+                飲み会調整ツール
+            </span>
+
         </div>
 
         <div class="header-user dropdown">
 
-            <span class="user-icon">👤</span>
+            <span class="user-icon">
+                👤
+            </span>
 
             <span class="user-name">
                 {{ username }}
             </span>
 
-            <span class="dropdown-arrow">▼</span>
+            <span class="dropdown-arrow">
+                ▼
+            </span>
 
             <div class="dropdown-menu">
-
 
                 <a href="{{ url_for('logout') }}">
                     ログアウト
@@ -38,101 +54,278 @@
             </div>
 
         </div>
+
     </header>
+
+
+    <!-- メイン -->
+
     <main class="main-content">
 
         <form method="POST" action="/create_event">
 
+            <!-- イベント情報カード -->
+
+            <section class="event-card">
+
+                <div class="section-header">
+
+                    <div class="section-icon">
+                        🍻
+                    </div>
+
+                    <div>
+
+                        <h2 class="section-title">
+                            イベントを作成
+                        </h2>
+
+                        <p class="section-subtitle">
+                            飲み会の情報を入力して募集を開始します
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
             <!-- イベント名 -->
-            <section class="form-section">
 
-                <h2>イベント名</h2>
+            <section class="form-card">
 
-                <input type="text" name="title" class="form-input" placeholder="例：6月飲み会" required>
+                <div class="section-header">
+
+                    <div class="section-icon">
+                        📝
+                    </div>
+
+                    <div>
+
+                        <h3 class="section-title">
+                            イベント名
+                        </h3>
+
+                        <p class="section-subtitle">
+                            飲み会のタイトルを入力してください
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <input type="text" name="title" class="form-input" placeholder="例：7月飲み会" required>
 
             </section>
+            <!-- =========================
+     場所候補
+========================= -->
 
+            <section class="form-card">
 
-            <!-- 場所 -->
-            <section class="form-section">
+                <div class="section-header">
 
-                <h2>場所候補（複数選択）</h2>
+                    <div class="section-icon">
+                        📍
+                    </div>
 
-                <div class="location-options">
+                    <div>
 
-                    <label class="checkbox-option">
+                        <h3 class="section-title">
+                            場所候補
+                        </h3>
+
+                        <p class="section-subtitle">
+                            飲み会を開催したい場所を選択してください
+                        </p>
+
+                        <span class="section-tag">
+                            複数選択できます
+                        </span>
+
+                    </div>
+
+                </div>
+
+                <div class="location-grid">
+
+                    <label class="choice-card">
+
                         <input type="checkbox" name="place" value="名古屋">
+
                         <span>名古屋</span>
+
                     </label>
 
-                    <label class="checkbox-option">
+                    <label class="choice-card">
+
                         <input type="checkbox" name="place" value="栄">
+
                         <span>栄</span>
+
                     </label>
 
-                    <label class="checkbox-option">
+                    <label class="choice-card">
+
                         <input type="checkbox" name="place" value="伏見">
+
                         <span>伏見</span>
+
                     </label>
 
-                    <label class="checkbox-option">
+                    <label class="choice-card">
+
                         <input type="checkbox" id="otherPlaceCheck">
+
                         <span>その他</span>
+
                     </label>
 
-                    <input type="text" id="otherPlaceInput" class="other-input" placeholder="場所を入力" disabled>
+                </div>
+
+                <input type="text" id="otherPlaceInput" class="form-input" placeholder="場所を入力" disabled>
+
+            </section>
+
+
+            <!-- =========================
+     日程候補
+========================= -->
+
+            <section class="form-card">
+
+                <div class="section-header">
+
+                    <div class="section-icon">
+                        📅
+                    </div>
+
+                    <div>
+
+                        <h3 class="section-title">
+                            日程候補
+                        </h3>
+
+                        <p class="section-subtitle">
+                            参加できる日程を選択してください
+                        </p>
+
+                        <span class="section-tag">
+                            複数選択できます
+                        </span>
+
+                    </div>
+
+                </div>
+
+                <div id="dateContainer" class="choice-grid">
 
                 </div>
 
             </section>
 
 
-            <!-- 日程 -->
-            <section class="form-section">
+            <!-- =========================
+     時間候補
+========================= -->
 
-                <h2>日程候補（複数選択）</h2>
+            <section class="form-card">
 
-                <div id="dateContainer" class="date-options">
+                <div class="section-header">
+
+                    <div class="section-icon">
+                        🕒
+                    </div>
+
+                    <div>
+
+                        <h3 class="section-title">
+                            時間候補
+                        </h3>
+
+                        <p class="section-subtitle">
+                            開催したい時間帯を選択してください
+                        </p>
+
+                        <span class="section-tag">
+                            複数選択できます
+                        </span>
+
+                    </div>
+
+                </div>
+
+                <div id="timeContainer" class="choice-grid">
+
                 </div>
 
             </section>
 
 
-            <!-- 時間 -->
-            <section class="form-section">
-
-                <h2>時間候補（複数選択）</h2>
-
-                <div id="timeContainer" class="date-options">
-                </div>
-
-            </section>
-
-
-            <!-- hidden -->
             <input type="hidden" name="all_places" id="all_places">
 
             <input type="hidden" name="all_dates" id="all_dates">
 
             <input type="hidden" name="all_times" id="all_times">
+            <!-- =========================
+     作成ボタン
+========================= -->
 
+            <section class="action-area">
 
-            <!-- 作成 -->
-            <section class="form-section">
+                <button type="submit" class="btn-submit-large">
 
-                <button type="submit" class="btn-submit">
+                    <span class="btn-icon">
+                        🍺
+                    </span>
 
-                    イベントを作成
+                    <span class="btn-title">
+                        イベントを作成
+                    </span>
+
+                    <span class="btn-subtitle">
+                        作成後すぐに参加者が投票できます
+                    </span>
 
                 </button>
+
+            </section>
+
+
+            <!-- =========================
+     説明カード
+========================= -->
+
+            <section class="info-card">
+
+                <div class="info-icon">
+
+                    💡
+
+                </div>
+
+                <div>
+
+                    <h4>
+
+                        イベント作成後も変更できます
+
+                    </h4>
+
+                    <p>
+
+                        募集終了までは候補の変更や参加者の投票内容の更新が可能です。
+
+                    </p>
+
+                </div>
 
             </section>
 
         </form>
 
     </main>
-
-
     <script>
 
         /* ==========================
@@ -140,93 +333,112 @@
         ========================== */
 
         const otherCheck =
-            document.getElementById(
-                "otherPlaceCheck"
-            );
+            document.getElementById("otherPlaceCheck");
 
         const otherInput =
-            document.getElementById(
-                "otherPlaceInput"
-            );
+            document.getElementById("otherPlaceInput");
 
-        otherCheck.addEventListener(
-            "change",
-            () => {
+        otherCheck.addEventListener("change", () => {
 
-                otherInput.disabled =
-                    !otherCheck.checked;
+            otherInput.disabled = !otherCheck.checked;
 
-                if (!otherCheck.checked) {
+            if (!otherCheck.checked) {
 
-                    otherInput.value = "";
-
-                }
+                otherInput.value = "";
 
             }
-        );
+
+        });
+
+        /* ==========================
+   場所選択
+========================== */
+
+        const placeInputs =
+            document.querySelectorAll(
+                '.location-grid input[type="checkbox"]'
+            );
+
+        placeInputs.forEach(input => {
+
+            input.addEventListener("change", () => {
+
+                input.parentElement.classList.toggle(
+                    "selected",
+                    input.checked
+                );
+
+            });
+
+        });
 
 
         /* ==========================
-           日付生成
+           日付生成（曜日付き）
         ========================== */
 
         const dateContainer =
-            document.getElementById(
-                "dateContainer"
-            );
+            document.getElementById("dateContainer");
 
         const today =
             new Date();
 
+        const week = [
+            "日",
+            "月",
+            "火",
+            "水",
+            "木",
+            "金",
+            "土"
+        ];
+
         for (let i = 0; i < 7; i++) {
 
-            const d =
-                new Date();
+            const d = new Date();
 
-            d.setDate(
-                today.getDate() + i
-            );
+            d.setDate(today.getDate() + i);
 
             const value =
                 `${d.getMonth() + 1}/${d.getDate()}`;
 
             const label =
-                document.createElement(
-                    "label"
-                );
+                document.createElement("label");
 
             label.className =
-                "date-option";
+                "choice-card";
 
             label.innerHTML = `
-                <input
-                    type="checkbox"
-                    value="${value}">
-                <span class="date-box">
+            <input
+                type="checkbox"
+                value="${value}">
+
+            <span class="date-box">
+
+                <div class="date-number">
                     ${value}
-                </span>
-            `;
+                </div>
+
+                <div class="date-week">
+                    ${week[d.getDay()]}
+                </div>
+
+            </span>
+        `;
 
             const input =
-                label.querySelector(
-                    "input"
+                label.querySelector("input");
+
+            input.addEventListener("change", () => {
+
+                label.classList.toggle(
+                    "selected",
+                    input.checked
                 );
 
-            input.addEventListener(
-                "change",
-                () => {
+            });
 
-                    label.classList.toggle(
-                        "selected",
-                        input.checked
-                    );
-
-                }
-            );
-
-            dateContainer.appendChild(
-                label
-            );
+            dateContainer.appendChild(label);
 
         }
 
@@ -245,49 +457,39 @@
         ];
 
         const timeContainer =
-            document.getElementById(
-                "timeContainer"
-            );
+            document.getElementById("timeContainer");
 
         times.forEach(time => {
 
             const label =
-                document.createElement(
-                    "label"
-                );
+                document.createElement("label");
 
             label.className =
-                "date-option";
+                "choice-card";
 
             label.innerHTML = `
-                <input
-                    type="checkbox"
-                    value="${time}">
-                <span class="date-box">
-                    ${time}
-                </span>
-            `;
+            <input
+                type="checkbox"
+                value="${time}">
+
+            <span>
+                ${time}
+            </span>
+        `;
 
             const input =
-                label.querySelector(
-                    "input"
+                label.querySelector("input");
+
+            input.addEventListener("change", () => {
+
+                label.classList.toggle(
+                    "selected",
+                    input.checked
                 );
 
-            input.addEventListener(
-                "change",
-                () => {
+            });
 
-                    label.classList.toggle(
-                        "selected",
-                        input.checked
-                    );
-
-                }
-            );
-
-            timeContainer.appendChild(
-                label
-            );
+            timeContainer.appendChild(label);
 
         });
 
@@ -298,94 +500,76 @@
 
         document
             .querySelector("form")
-            .addEventListener(
-                "submit",
-                (e) => {
+            .addEventListener("submit", (e) => {
 
-                    const places = [];
+                const places = [];
 
-                    document
-                        .querySelectorAll(
-                            'input[name="place"]:checked'
-                        )
-                        .forEach(
-                            item => {
+                document
+                    .querySelectorAll(
+                        'input[name="place"]:checked'
+                    )
+                    .forEach(item => {
 
-                                places.push(
-                                    item.value
-                                );
+                        places.push(item.value);
 
-                            }
-                        );
+                    });
 
-                    if (
-                        otherCheck.checked &&
+                if (
+                    otherCheck.checked &&
+                    otherInput.value.trim()
+                ) {
+
+                    places.push(
                         otherInput.value.trim()
-                    ) {
-
-                        places.push(
-                            otherInput.value.trim()
-                        );
-
-                    }
-
-                    const dates =
-                        Array.from(
-                            dateContainer.querySelectorAll(
-                                "input:checked"
-                            )
-                        ).map(
-                            item => item.value
-                        );
-
-                    const selectedTimes =
-                        Array.from(
-                            timeContainer.querySelectorAll(
-                                "input:checked"
-                            )
-                        ).map(
-                            item => item.value
-                        );
-
-                    if (
-                        places.length === 0 ||
-                        dates.length === 0 ||
-                        selectedTimes.length === 0
-                    ) {
-
-                        e.preventDefault();
-
-                        alert(
-                            "場所・日程・時間を1つ以上選択してください"
-                        );
-
-                        return;
-
-                    }
-
-                    document
-                        .getElementById(
-                            "all_places"
-                        ).value =
-                        places.join(",");
-
-                    document
-                        .getElementById(
-                            "all_dates"
-                        ).value =
-                        dates.join(",");
-
-                    document
-                        .getElementById(
-                            "all_times"
-                        ).value =
-                        selectedTimes.join(",");
+                    );
 
                 }
-            );
+
+                const dates =
+                    Array.from(
+                        dateContainer.querySelectorAll(
+                            "input:checked"
+                        )
+                    ).map(item => item.value);
+
+                const selectedTimes =
+                    Array.from(
+                        timeContainer.querySelectorAll(
+                            "input:checked"
+                        )
+                    ).map(item => item.value);
+
+                if (
+                    places.length === 0 ||
+                    dates.length === 0 ||
+                    selectedTimes.length === 0
+                ) {
+
+                    e.preventDefault();
+
+                    alert(
+                        "場所・日程・時間を1つ以上選択してください。"
+                    );
+
+                    return;
+
+                }
+
+                document
+                    .getElementById("all_places")
+                    .value = places.join(",");
+
+                document
+                    .getElementById("all_dates")
+                    .value = dates.join(",");
+
+                document
+                    .getElementById("all_times")
+                    .value = selectedTimes.join(",");
+
+            });
 
     </script>
-
 </body>
 
 </html>

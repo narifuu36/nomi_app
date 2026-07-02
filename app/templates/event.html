@@ -15,24 +15,43 @@
 
 <body>
 
+
+
+    <!-- ==========================
+         ヘッダー
+    ========================== -->
+
     <header class="header">
+
         <div class="header-logo">
-            <span class="beer-icon">🍻</span>
-            <span class="header-title">飲み会調整ツール</span>
+
+            <span class="beer-icon">
+                🍻
+            </span>
+
+            <span class="header-title">
+                飲み会調整ツール
+            </span>
+
         </div>
 
         <div class="header-user dropdown">
 
-            <span class="user-icon">👤</span>
-
-            <span class="user-name">
-                {{ username }}
+            <span class="user-icon">
+                👤
             </span>
 
-            <span class="dropdown-arrow">▼</span>
+            <span class="user-name">
+
+                {{ username }}
+
+            </span>
+
+            <span class="dropdown-arrow">
+                ▼
+            </span>
 
             <div class="dropdown-menu">
-
 
                 <a href="{{ url_for('logout') }}">
                     ログアウト
@@ -41,10 +60,13 @@
             </div>
 
         </div>
+
     </header>
 
-</div>
 
+    <!-- ==========================
+         メイン
+    ========================== -->
 
     <main class="main-content">
 
@@ -65,40 +87,74 @@
         {% endwith %}
 
 
-        <!-- イベント情報 -->
+        <!-- ==========================
+             イベント情報
+        ========================== -->
 
-        <section class="result-header-card">
+        <section class="event-card">
 
-            <h1>
+            <div class="section-header">
 
-                {{ event.title }}
+                <div class="section-icon">
 
-            </h1>
+                    🍻
 
-            <p>
+                </div>
 
-                主催者：
-                <strong>
+                <div>
 
-                    {{ host_name }}
+                    <h2 class="section-title">
 
-                </strong>
+                        {{ event.title }}
 
-            </p>
+                    </h2>
 
-            <p>
+                    <p class="section-subtitle">
 
-                残り時間：
+                        飲み会の投票を行います
 
-                <strong>
+                    </p>
 
-                    {{ remain_hours }}時間
+                </div>
 
-                    {{ remain_minutes }}分
+            </div>
 
-                </strong>
+            <div class="event-info-grid">
 
-            </p>
+                <div class="info-box">
+
+                    <span class="info-label">
+
+                        👤 主催者
+
+                    </span>
+
+                    <span class="info-value">
+
+                        {{ host_name }}
+
+                    </span>
+
+                </div>
+
+                <div class="info-box">
+
+                    <span class="info-label">
+
+                        ⏰ 残り時間
+
+                    </span>
+
+                    <span class="info-value">
+
+                        {{ remain_hours }}時間
+                        {{ remain_minutes }}分
+
+                    </span>
+
+                </div>
+
+            </div>
 
         </section>
 
@@ -106,27 +162,49 @@
         <form method="POST" action="{{ url_for('event') }}">
 
 
-            <!-- 参加可否 -->
+            <!-- ==========================
+                 参加可否
+            ========================== -->
 
-            <section class="form-section">
+            <section class="form-card">
 
-                <h2>
+                <div class="section-header">
 
-                    参加しますか？
+                    <div class="section-icon">
 
-                </h2>
+                        🙋
+
+                    </div>
+
+                    <div>
+
+                        <h3 class="section-title">
+
+                            参加可否
+
+                        </h3>
+
+                        <p class="section-subtitle">
+
+                            飲み会に参加するか選択してください
+
+                        </p>
+
+                    </div>
+
+                </div>
 
                 <div class="participation-buttons">
 
                     <button type="button" id="joinBtn" class="btn-participate active">
 
-                        参加する
+                        ✅ 参加する
 
                     </button>
 
                     <button type="button" id="notJoinBtn" class="btn-participate">
 
-                        参加しない
+                        ❌ 参加しない
 
                     </button>
 
@@ -137,27 +215,60 @@
             </section>
 
 
-            <!-- 詳細入力 -->
+            <!-- ==========================
+     投票エリア
+========================== -->
 
             <div id="voteArea">
+
                 <!-- ==========================
-             場所
-        ========================== -->
+         場所
+    ========================== -->
 
-                <section class="form-section">
+                <section class="form-card">
 
-                    <h2>場所（複数選択）</h2>
+                    <div class="section-header">
 
-                    <div class="location-options">
+                        <div class="section-icon">
+                            📍
+                        </div>
+
+                        <div>
+
+                            <h3 class="section-title">
+
+                                場所候補
+
+                            </h3>
+
+                            <p class="section-subtitle">
+
+                                行きたい場所を選択してください
+
+                            </p>
+
+                            <span class="section-tag">
+
+                                複数選択できます
+
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <div class="location-grid">
 
                         {% for place in places %}
 
-                        <label class="checkbox-option">
+                        <label class="choice-card">
 
                             <input type="checkbox" name="place" value="{{ place }}">
 
                             <span>
+
                                 {{ place }}
+
                             </span>
 
                         </label>
@@ -169,25 +280,58 @@
                 </section>
 
 
+
                 <!-- ==========================
-             日程
-        ========================== -->
+         日程
+    ========================== -->
 
-                <section class="form-section">
+                <section class="form-card">
 
-                    <h2>日程（複数選択）</h2>
+                    <div class="section-header">
 
-                    <div class="date-options">
+                        <div class="section-icon">
+                            📅
+                        </div>
+
+                        <div>
+
+                            <h3 class="section-title">
+
+                                日程候補
+
+                            </h3>
+
+                            <p class="section-subtitle">
+
+                                参加できる日程を選択してください
+
+                            </p>
+
+                            <span class="section-tag">
+
+                                複数選択できます
+
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <div class="choice-grid">
 
                         {% for date in dates %}
 
-                        <label class="date-option">
+                        <label class="choice-card">
 
                             <input type="checkbox" name="date" value="{{ date }}">
 
                             <span class="date-box">
 
-                                {{ date }}
+                                <div class="date-number">
+
+                                    {{ date }}
+
+                                </div>
 
                             </span>
 
@@ -200,23 +344,52 @@
                 </section>
 
 
+
                 <!-- ==========================
-             時間
-        ========================== -->
+         時間
+    ========================== -->
 
-                <section class="form-section">
+                <section class="form-card">
 
-                    <h2>時間（複数選択）</h2>
+                    <div class="section-header">
 
-                    <div class="date-options">
+                        <div class="section-icon">
+                            🕒
+                        </div>
+
+                        <div>
+
+                            <h3 class="section-title">
+
+                                時間候補
+
+                            </h3>
+
+                            <p class="section-subtitle">
+
+                                参加できる時間帯を選択してください
+
+                            </p>
+
+                            <span class="section-tag">
+
+                                複数選択できます
+
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <div class="choice-grid">
 
                         {% for time in times %}
 
-                        <label class="date-option">
+                        <label class="choice-card">
 
                             <input type="checkbox" name="time_slot" value="{{ time }}">
 
-                            <span class="date-box">
+                            <span>
 
                                 {{ time }}
 
@@ -230,103 +403,169 @@
 
                 </section>
 
-
-                <!-- ==========================
-             送信
-        ========================== -->
-
             </div>
 
-            <section class="form-section">
 
-                <button type="submit" class="btn-submit">
+            <!-- ==========================
+     投票ボタン
+========================== -->
 
-                    投票する
+            <section class="action-area">
+
+                <button type="submit" class="btn-submit-large">
+
+                    <span class="btn-icon">
+
+                        🗳️
+
+                    </span>
+
+                    <span class="btn-title">
+
+                        投票する
+
+                    </span>
+
+                    <span class="btn-subtitle">
+
+                        入力内容を送信します
+
+                    </span>
 
                 </button>
 
             </section>
+            {% if is_host %}
+
+            <section class="finish-area">
+
+                <form method="POST" action="{{ url_for('finish_event') }}">
+
+                    <button type="submit" class="btn-finish">
+
+                        募集終了
+
+                    </button>
+
+                </form>
+
+            </section>
+
+            {% endif %}
+
+            <section class="info-card">
+
+                <div class="info-icon">
+
+                    💡
+
+                </div>
+
+                <div>
+
+                    <h4>
+
+                        投票内容は後から変更できます
+
+                    </h4>
+
+                    <p>
+
+                        募集終了までは何度でも投票をやり直すことができます。
+
+                    </p>
+
+                </div>
+
+            </section>
 
         </form>
-            <script>
+        <script>
 
-        // ==========================
-        // 要素取得
-        // ==========================
+            // ==========================
+            // 要素取得
+            // ==========================
 
-        const joinBtn = document.getElementById("joinBtn");
-        const notJoinBtn = document.getElementById("notJoinBtn");
+            const joinBtn = document.getElementById("joinBtn");
+            const notJoinBtn = document.getElementById("notJoinBtn");
 
-        const willJoin =
-            document.getElementById("will_join");
+            const willJoin =
+                document.getElementById("will_join");
 
-        const voteArea =
-            document.getElementById("voteArea");
-
-
-        // ==========================
-        // 初期状態
-        // ==========================
-
-        voteArea.style.display = "block";
+            const voteArea =
+                document.getElementById("voteArea");
 
 
-        // ==========================
-        // 参加する
-        // ==========================
-
-        joinBtn.addEventListener("click", () => {
-
-            willJoin.value = 1;
+            // ==========================
+            // 初期状態
+            // ==========================
 
             voteArea.style.display = "block";
 
-            joinBtn.classList.add("active");
-            notJoinBtn.classList.remove("active");
 
-        });
+            // ==========================
+            // 参加する
+            // ==========================
 
+            joinBtn.addEventListener("click", () => {
 
-        // ==========================
-        // 参加しない
-        // ==========================
+                willJoin.value = 1;
 
-        notJoinBtn.addEventListener("click", () => {
+                voteArea.style.display = "block";
 
-            willJoin.value = 0;
+                joinBtn.classList.add("active");
+                notJoinBtn.classList.remove("active");
 
-            voteArea.style.display = "none";
-
-            joinBtn.classList.remove("active");
-            notJoinBtn.classList.add("active");
-
-        });
+            });
 
 
-        // ==========================
-        // チェックボックスの色変更
-        // ==========================
+            // ==========================
+            // 参加しない
+            // ==========================
 
-        document
-            .querySelectorAll(
-                ".date-option input,.checkbox-option input"
-            )
-            .forEach(input => {
+            notJoinBtn.addEventListener("click", () => {
 
-                input.addEventListener("change", () => {
+                willJoin.value = 0;
 
-                    input.parentElement.classList.toggle(
-                        "selected",
-                        input.checked
+                voteArea.style.display = "none";
+
+                joinBtn.classList.remove("active");
+                notJoinBtn.classList.add("active");
+
+            });
+
+
+            // ==========================
+            // チェックボックスの色変更
+            // ==========================
+
+            /* ==========================
+   カード選択
+========================== */
+
+            document
+                .querySelectorAll(
+                    ".choice-card input"
+                )
+                .forEach(input => {
+
+                    input.addEventListener(
+                        "change",
+                        () => {
+
+                            input.parentElement.classList.toggle(
+                                "selected",
+                                input.checked
+                            );
+
+                        }
                     );
 
                 });
 
-            });
+        </script>
 
-    </script>
-
-</main>
+    </main>
 
 </body>
 

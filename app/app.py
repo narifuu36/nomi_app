@@ -629,7 +629,7 @@ def complete():
     conn.commit()
     conn.close()
 
-    flash("イベントを終了しました")
+    flash("イベントを作成しました")
 
     return redirect(url_for("index"))
 
