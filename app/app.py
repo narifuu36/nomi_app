@@ -48,7 +48,7 @@ def auto_close_event():
             "%Y-%m-%d %H:%M:%S"
         )
 
-        end_time = created + timedelta(minutes=2)
+        end_time = created + timedelta(hours=24)
 
         if datetime.now() >= end_time:
 
@@ -374,7 +374,7 @@ def event():
         "%Y-%m-%d %H:%M:%S"
     )
 
-    end_time = created + timedelta(minutes=2)
+    end_time = created + timedelta(hours=24)
 
     remain = end_time - datetime.now()
 
@@ -544,7 +544,7 @@ def result():
         "%Y-%m-%d %H:%M:%S"
     )
 
-    end_time = created + timedelta(minutes=2)
+    end_time = created + timedelta(hours=24)
 
     remain = end_time - datetime.now()
 
