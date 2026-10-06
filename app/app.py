@@ -180,9 +180,10 @@ def signup():
 
     if request.method == "POST":
 
-        username = request.form["username"]
+        username = request.form["username"].strip()
         password = request.form["password"]
         password_confirm = request.form["password_confirm"]
+        email = request.form["email"].strip()
 
         if password != password_confirm:
 
@@ -201,9 +202,9 @@ def signup():
             """
             SELECT *
             FROM users
-            WHERE username = ?
+            WHERE username = ? OR email = ?
             """,
-            (username,)
+            (username, email)
         ).fetchone()
 
         if exists:
@@ -212,7 +213,7 @@ def signup():
 
             return render_template(
                 "signup.html",
-                error="そのユーザー名は既に使用されています"
+                error="そのユーザー名またはメールアドレスは既に使用されています"
             )
 
         conn.execute(
@@ -220,15 +221,17 @@ def signup():
             INSERT INTO users
             (
                 username,
+                email,
                 password_hash
             )
             VALUES
             (
-                ?, ?
+                ?, ?, ?
             )
             """,
             (
                 username,
+                email,
                 password_hash
             )
         )

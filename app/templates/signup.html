@@ -40,6 +40,18 @@
                     <input type="password" name="password_confirm" class="form-input" placeholder="もう一度入力" required>
                 </div>
 
+                <div class="form-group">
+                    <label class="form-label">メールアドレス</label>
+                    <input
+                        type="email"
+                        name="email"
+                        class="form-input"
+                        placeholder="example@gmail.com"
+                        required
+                    >
+                    <span class="input-hint">通知の送信に使用します</span>
+                </div>
+
                 {% if error %}
                 <div class="error-notice">
                     <span>⚠️</span> {{ error }}
