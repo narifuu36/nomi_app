@@ -188,6 +188,51 @@
 
             </section>
 
+            <div class="form-group hotpepper-search-section">
+
+    <label class="form-label">ホットペッパー店舗検索</label>
+
+    <div class="hotpepper-search-box">
+
+        <input
+            type="text"
+            id="hotpepperKeyword"
+            class="form-input"
+            placeholder="地域を入力（例：栄、名古屋駅）"
+        >
+
+        <button
+            type="button"
+            id="hotpepperSearchButton"
+            class="hotpepper-search-button"
+        >
+            検索開始
+        </button>
+
+    </div>
+
+        <span class="input-hint">
+            入力した地域の飲食店を検索できます
+        </span>
+
+        <!-- 検索中 -->
+        <div
+            id="hotpepperLoading"
+            class="hotpepper-loading"
+            style="display: none;"
+        >
+            店舗を検索しています...
+        </div>
+
+        <!-- 検索結果 -->
+        <div
+            id="hotpepperResults"
+            class="hotpepper-results"
+        >
+        </div>
+
+    </div>
+
 
             <!-- =========================
      日程候補
@@ -371,6 +416,194 @@
             });
 
         });
+
+
+        document.addEventListener("DOMContentLoaded", function () {
+
+    const searchButton = document.getElementById("hotpepperSearchButton");
+    const keywordInput = document.getElementById("hotpepperKeyword");
+    const resultsArea = document.getElementById("hotpepperResults");
+    const loading = document.getElementById("hotpepperLoading");
+
+    searchButton.addEventListener("click", searchHotpepper);
+
+    keywordInput.addEventListener("keydown", function (event) {
+
+        if (event.key === "Enter") {
+            event.preventDefault();
+            searchHotpepper();
+        }
+
+    });
+
+
+    async function searchHotpepper() {
+
+        const keyword = keywordInput.value.trim();
+
+        if (!keyword) {
+
+            resultsArea.innerHTML = `
+                <div class="hotpepper-message">
+                    地域を入力してください
+                </div>
+            `;
+
+            return;
+        }
+
+
+        // 検索中表示
+        loading.style.display = "block";
+
+        resultsArea.innerHTML = "";
+
+
+        // ボタンを一時的に無効化
+        searchButton.disabled = true;
+        searchButton.textContent = "検索中...";
+
+
+        try {
+
+            const response = await fetch(
+                `/hotpepper/search?keyword=${encodeURIComponent(keyword)}`
+            );
+
+
+            const data = await response.json();
+
+
+            if (!response.ok || data.error) {
+
+                resultsArea.innerHTML = `
+                    <div class="hotpepper-message">
+                        店舗情報の取得に失敗しました
+                    </div>
+                `;
+
+                return;
+            }
+
+
+            if (!data.shops || data.shops.length === 0) {
+
+                resultsArea.innerHTML = `
+                    <div class="hotpepper-message">
+                        「${keyword}」の店舗が見つかりませんでした
+                    </div>
+                `;
+
+                return;
+            }
+
+
+            // 店舗一覧を作成
+
+            data.shops.forEach(function (shop) {
+
+                const shopCard = document.createElement("div");
+
+                shopCard.className = "hotpepper-shop-card";
+
+
+                shopCard.innerHTML = `
+
+                    <div class="hotpepper-shop-name">
+                        ${escapeHtml(shop.name)}
+                    </div>
+
+                    <div class="hotpepper-shop-info">
+                        ${escapeHtml(shop.genre || "ジャンル情報なし")}
+                    </div>
+
+                    <div class="hotpepper-shop-info">
+                        ${escapeHtml(shop.address || "住所情報なし")}
+                    </div>
+
+                    ${
+                        shop.station
+                        ?
+                        `
+                        <div class="hotpepper-shop-info">
+                            🚃 ${escapeHtml(shop.station)}
+                        </div>
+                        `
+                        :
+                        ""
+                    }
+
+                    ${
+                        shop.budget
+                        ?
+                        `
+                        <div class="hotpepper-shop-info">
+                            💰 ${escapeHtml(shop.budget)}
+                        </div>
+                        `
+                        :
+                        ""
+                    }
+
+                    ${
+                        shop.url
+                        ?
+                        `
+                        <a
+                            href="${escapeHtml(shop.url)}"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="hotpepper-shop-link"
+                        >
+                            ホットペッパーで見る
+                        </a>
+                        `
+                        :
+                        ""
+                    }
+
+                `;
+
+
+                resultsArea.appendChild(shopCard);
+
+            });
+
+
+        } catch (error) {
+
+            console.error(error);
+
+            resultsArea.innerHTML = `
+                <div class="hotpepper-message">
+                    店舗情報の取得に失敗しました
+                </div>
+            `;
+
+        } finally {
+
+            loading.style.display = "none";
+
+            searchButton.disabled = false;
+            searchButton.textContent = "検索開始";
+
+        }
+
+    }
+
+
+    // HTMLとして解釈されないようにする
+    function escapeHtml(value) {
+
+        const div = document.createElement("div");
+
+        div.textContent = value;
+
+        return div.innerHTML;
+
+    }
+
+});
 
 
         /* ==========================

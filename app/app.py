@@ -1,5 +1,6 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash,jsonify
 import sqlite3
+import requests
 import hashlib
 from collections import Counter
 from datetime import datetime, timedelta
@@ -8,6 +9,7 @@ app = Flask(__name__)
 app.secret_key = "secret-key"
 
 DB_NAME = "nomikai.db"
+HOTPEPPER_API_KEY = "50476680ea3687f7"
 
 
 # ==========================
@@ -468,6 +470,65 @@ def event():
     dates=event["dates"].split(",") if event["dates"] else [],
     times=event["times"].split(",") if event["times"] else []
 )
+
+
+@app.route("/hotpepper/search")
+def hotpepper_search():
+
+    keyword = request.args.get("keyword", "").strip()
+
+    if not keyword:
+        return jsonify({
+            "shops": []
+        })
+
+    url = "http://webservice.recruit.co.jp/hotpepper/gourmet/v1/"
+
+    params = {
+        "key": HOTPEPPER_API_KEY,
+        "keyword": keyword,
+        "format": "json",
+        "count": 30
+    }
+
+    try:
+
+        response = requests.get(
+            url,
+            params=params,
+            timeout=10
+        )
+
+        response.raise_for_status()
+
+        data = response.json()
+
+        shops = data.get("results", {}).get("shop", [])
+
+        results = []
+
+        for shop in shops:
+
+            results.append({
+                "name": shop.get("name", ""),
+                "address": shop.get("address", ""),
+                "genre": shop.get("genre", {}).get("name", ""),
+                "budget": shop.get("budget", {}).get("name", ""),
+                "station": shop.get("station_name", ""),
+                "url": shop.get("urls", {}).get("pc", "")
+            })
+
+        return jsonify({
+            "shops": results
+        })
+
+    except Exception as e:
+
+        print("HotPepper API Error:", e)
+
+        return jsonify({
+            "error": "店舗情報の取得に失敗しました"
+        }), 500
 
     # ==========================
 # RESULT
