@@ -472,63 +472,91 @@ def event():
 )
 
 
+
 @app.route("/hotpepper/search")
 def hotpepper_search():
-
     keyword = request.args.get("keyword", "").strip()
+    genre = request.args.get("genre", "").strip()
+    budget = request.args.get("budget", "").strip()
+    private_room = request.args.get("private_room", "0")
+    free_drink = request.args.get("free_drink", "0")
 
     if not keyword:
-        return jsonify({
-            "shops": []
-        })
+        return jsonify({"shops": []})
 
-    url = "http://webservice.recruit.co.jp/hotpepper/gourmet/v1/"
-
+    # APIが受け付ける検索条件
     params = {
         "key": HOTPEPPER_API_KEY,
         "keyword": keyword,
         "format": "json",
-        "count": 30
+        "count": 30,
+        "private_room": "1" if private_room == "1" else "0",
+        "free_drink": "1" if free_drink == "1" else "0"
     }
 
+    # 指定がある条件だけ追加
+    if genre:
+        params["genre"] = genre
+
+    if budget:
+        params["budget"] = budget
+
+    url = "http://webservice.recruit.co.jp/hotpepper/gourmet/v1/"
+
     try:
-
-        response = requests.get(
-            url,
-            params=params,
-            timeout=10
-        )
-
+        response = requests.get(url, params=params, timeout=10)
         response.raise_for_status()
-
         data = response.json()
 
         shops = data.get("results", {}).get("shop", [])
-
         results = []
 
         for shop in shops:
-
             results.append({
+                # 既存の店舗一覧用
                 "name": shop.get("name", ""),
                 "address": shop.get("address", ""),
                 "genre": shop.get("genre", {}).get("name", ""),
                 "budget": shop.get("budget", {}).get("name", ""),
                 "station": shop.get("station_name", ""),
-                "url": shop.get("urls", {}).get("pc", "")
+                "url": shop.get("urls", {}).get("pc", ""),
+
+                # 店舗詳細用
+                "phone": shop.get("tel", ""),
+                "open": shop.get("open", ""),
+                "close": shop.get("close", ""),
+                "access": shop.get("access", ""),
+                "catch": shop.get("catch", ""),
+                "capacity": shop.get("capacity", ""),
+                "parking": shop.get("parking", ""),
+                "private_room": shop.get("private_room", ""),
+                "free_drink": shop.get("free_drink", ""),
+
+                # 地図用
+                "lat": shop.get("lat", ""),
+                "lng": shop.get("lng", "")
             })
 
+        return jsonify({"shops": results})
+
+    except requests.exceptions.Timeout:
+        app.logger.warning("HotPepper API timeout")
         return jsonify({
-            "shops": results
-        })
+            "error": "店舗検索がタイムアウトしました"
+        }), 504
 
-    except Exception as e:
-
-        print("HotPepper API Error:", e)
-
+    except requests.exceptions.RequestException:
+        app.logger.exception("HotPepper API request failed")
         return jsonify({
             "error": "店舗情報の取得に失敗しました"
-        }), 500
+        }), 502
+
+    except ValueError:
+        app.logger.exception("HotPepper API JSON parsing failed")
+        return jsonify({
+            "error": "店舗情報を正しく読み込めませんでした"
+        }), 502
+
 
     # ==========================
 # RESULT

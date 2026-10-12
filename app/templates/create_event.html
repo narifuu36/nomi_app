@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="ja">
 
 <head>
@@ -11,6 +12,107 @@
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 
+
+    <style>
+        .hotpepper-detail-button,
+        .hotpepper-map-link {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 9px 12px;
+            border: 1px solid #e58b35;
+            border-radius: 8px;
+            background: #fff7ef;
+            color: #8a4b12;
+            font: inherit;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .hotpepper-shop-details {
+            margin-top: 12px;
+            padding: 12px;
+            border-radius: 8px;
+            background: #fffaf5;
+        }
+
+        .hotpepper-shop-details[hidden] {
+            display: none;
+        }
+
+        .hotpepper-map-link {
+            margin-bottom: 4px;
+        }
+
+        .hotpepper-add-button {
+            display: inline-block;
+            margin-top: 10px;
+            margin-right: 8px;
+            padding: 9px 12px;
+            border: 1px solid #2f855a;
+            border-radius: 8px;
+            background: #f0fff4;
+            color: #276749;
+            font: inherit;
+            cursor: pointer;
+        }
+
+        .hotpepper-add-button:disabled {
+            opacity: 0.65;
+            cursor: default;
+        }
+
+        /* 場所候補は横一列に並べ、候補が増えたら横スクロールで選択する */
+        .location-grid {
+            display: flex !important;
+            flex-wrap: nowrap !important;
+            gap: 10px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding: 8px 4px 12px;
+            max-width: 100%;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+        }
+
+        .place-option {
+            display: flex;
+            flex: 0 0 auto;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 5px;
+            min-width: 105px;
+            max-width: 220px;
+        }
+
+        .place-option .choice-card {
+            box-sizing: border-box;
+            width: 100%;
+            min-height: 48px;
+            white-space: nowrap;
+        }
+
+        .place-option .choice-card span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .place-remove-button {
+            width: 100%;
+            padding: 5px 8px;
+            border: 1px solid #d66;
+            border-radius: 6px;
+            background: #fff5f5;
+            color: #a22;
+            font: inherit;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+
+        .place-remove-button:hover {
+            background: #ffe5e5;
+        }
+    </style>
+
 </head>
 
 <body>
@@ -22,11 +124,15 @@
         <div class="header-logo">
 
             <span class="beer-icon">
+
                 🍻
+
             </span>
 
             <span class="header-title">
+
                 のみとも
+
             </span>
 
         </div>
@@ -34,21 +140,29 @@
         <div class="header-user dropdown">
 
             <span class="user-icon">
+
                 👤
+
             </span>
 
             <span class="user-name">
+
                 {{ username }}
+
             </span>
 
             <span class="dropdown-arrow">
+
                 ▼
+
             </span>
 
             <div class="dropdown-menu">
 
                 <a href="{{ url_for('logout') }}">
+
                     ログアウト
+
                 </a>
 
             </div>
@@ -56,7 +170,6 @@
         </div>
 
     </header>
-
 
     <!-- メイン -->
 
@@ -71,17 +184,23 @@
                 <div class="section-header">
 
                     <div class="section-icon">
+
                         🍻
+
                     </div>
 
                     <div>
 
                         <h2 class="section-title">
+
                             イベントを作成
+
                         </h2>
 
                         <p class="section-subtitle">
+
                             飲み会の情報を入力して募集を開始します
+
                         </p>
 
                     </div>
@@ -90,7 +209,6 @@
 
             </section>
 
-
             <!-- イベント名 -->
 
             <section class="form-card">
@@ -98,17 +216,23 @@
                 <div class="section-header">
 
                     <div class="section-icon">
+
                         📝
+
                     </div>
 
                     <div>
 
                         <h3 class="section-title">
+
                             イベント名
+
                         </h3>
 
                         <p class="section-subtitle">
+
                             飲み会のタイトルを入力してください
+
                         </p>
 
                     </div>
@@ -118,30 +242,41 @@
                 <input type="text" name="title" class="form-input" placeholder="例：7月飲み会" required>
 
             </section>
+
             <!-- =========================
+
      場所候補
-========================= -->
+
+\========================= -->
 
             <section class="form-card">
 
                 <div class="section-header">
 
                     <div class="section-icon">
+
                         📍
+
                     </div>
 
                     <div>
 
                         <h3 class="section-title">
+
                             場所候補
+
                         </h3>
 
                         <p class="section-subtitle">
+
                             飲み会を開催したい場所を選択してください
+
                         </p>
 
                         <span class="section-tag">
+
                             複数選択できます
+
                         </span>
 
                     </div>
@@ -192,72 +327,112 @@
 
     <label class="form-label">ホットペッパー店舗検索</label>
 
-    <div class="hotpepper-search-box">
+    <div class="hotpepper-search-box" style="display:grid; gap:10px;">
+        <input type="text" id="hotpepperKeyword" class="form-input" placeholder="地域を入力（例：栄、名古屋駅）" value="栄">
 
-        <input
-            type="text"
-            id="hotpepperKeyword"
-            class="form-input"
-            placeholder="地域を入力（例：栄、名古屋駅）"
-        >
+        <label class="form-label" for="hotpepperGenre">ジャンル</label>
+        <select id="hotpepperGenre" class="form-input">
+            <option value="">指定なし</option>
+            <option value="G001">居酒屋</option>
+            <option value="G002">ダイニングバー・バル</option>
+            <option value="G003">創作料理</option>
+            <option value="G004">和食</option>
+            <option value="G005">洋食</option>
+            <option value="G006">イタリアン・フレンチ</option>
+            <option value="G007">中華</option>
+            <option value="G008">焼肉・ホルモン</option>
+            <option value="G009">アジア・エスニック料理</option>
+            <option value="G010">各国料理</option>
+            <option value="G011">カラオケ・パーティ</option>
+            <option value="G012">バー・カクテル</option>
+            <option value="G013">ラーメン</option>
+            <option value="G014">カフェ・スイーツ</option>
+            <option value="G015">その他グルメ</option>
+        </select>
 
-        <button
-            type="button"
-            id="hotpepperSearchButton"
-            class="hotpepper-search-button"
-        >
-            検索開始
-        </button>
+        <label class="form-label" for="hotpepperBudget">予算（1人あたり）</label>
+        <select id="hotpepperBudget" class="form-input">
+            <option value="">指定なし</option>
+            <option value="B001">～2,000円</option>
+            <option value="B002">2,001～3,000円</option>
+            <option value="B003">3,001～4,000円</option>
+            <option value="B004">4,001～5,000円</option>
+            <option value="B005">5,001～7,000円</option>
+            <option value="B006">7,001円～</option>
+        </select>
 
+        <label><input type="checkbox" id="hotpepperPrivateRoom"> 個室あり</label>
+        <label><input type="checkbox" id="hotpepperFreeDrink"> 飲み放題あり</label>
+
+        <button type="button" id="hotpepperSearchButton" class="hotpepper-search-button">検索開始</button>
     </div>
 
-        <span class="input-hint">
-            入力した地域の飲食店を検索できます
-        </span>
+    <span class="input-hint">地域・ジャンル・予算・個室・飲み放題で店舗を絞り込めます。</span>
 
         <!-- 検索中 -->
+
         <div
+
             id="hotpepperLoading"
+
             class="hotpepper-loading"
+
             style="display: none;"
+
         >
+
             店舗を検索しています...
+
         </div>
 
         <!-- 検索結果 -->
+
         <div
+
             id="hotpepperResults"
+
             class="hotpepper-results"
+
         >
+
         </div>
 
     </div>
 
-
             <!-- =========================
+
      日程候補
-========================= -->
+
+\========================= -->
 
             <section class="form-card">
 
                 <div class="section-header">
 
                     <div class="section-icon">
+
                         📅
+
                     </div>
 
                     <div>
 
                         <h3 class="section-title">
+
                             日程候補
+
                         </h3>
 
                         <p class="section-subtitle">
+
                             参加できる日程を選択してください
+
                         </p>
 
                         <span class="section-tag">
+
                             複数選択できます
+
                         </span>
 
                     </div>
@@ -270,31 +445,40 @@
 
             </section>
 
-
             <!-- =========================
+
      時間候補
-========================= -->
+
+\========================= -->
 
             <section class="form-card">
 
                 <div class="section-header">
 
                     <div class="section-icon">
+
                         🕒
+
                     </div>
 
                     <div>
 
                         <h3 class="section-title">
+
                             時間候補
+
                         </h3>
 
                         <p class="section-subtitle">
+
                             開催したい時間帯を選択してください
+
                         </p>
 
                         <span class="section-tag">
+
                             複数選択できます
+
                         </span>
 
                     </div>
@@ -307,40 +491,49 @@
 
             </section>
 
-
             <input type="hidden" name="all_places" id="all_places">
 
             <input type="hidden" name="all_dates" id="all_dates">
 
             <input type="hidden" name="all_times" id="all_times">
+
             <!-- =========================
+
      作成ボタン
-========================= -->
+
+\========================= -->
 
             <section class="action-area">
 
                 <button type="submit" class="btn-submit-large">
 
                     <span class="btn-icon">
+
                         🍺
+
                     </span>
 
                     <span class="btn-title">
+
                         イベントを作成
+
                     </span>
 
                     <span class="btn-subtitle">
+
                         作成後すぐに参加者が投票できます
+
                     </span>
 
                 </button>
 
             </section>
 
-
             <!-- =========================
+
      説明カード
-========================= -->
+
+\========================= -->
 
             <section class="info-card">
 
@@ -371,17 +564,51 @@
         </form>
 
     </main>
+
     <script>
 
-        /* ==========================
-           その他場所
-        ========================== */
 
         const otherCheck =
+
             document.getElementById("otherPlaceCheck");
 
         const otherInput =
+
             document.getElementById("otherPlaceInput");
+
+        // イベント作成画面（主催者側）だけで候補の削除ボタンを付ける。
+        // 投票画面のテンプレートにはこの処理を置かない。
+        const locationGrid = document.querySelector(".location-grid");
+
+        function addRemoveButton(optionWrapper, checkbox) {
+            const removeButton = document.createElement("button");
+            removeButton.type = "button";
+            removeButton.className = "place-remove-button";
+            removeButton.textContent = "候補を削除";
+            removeButton.setAttribute("aria-label", `${checkbox.value || checkbox.nextElementSibling?.textContent || "場所候補"}を削除`);
+            removeButton.addEventListener("click", () => {
+                if (checkbox.id === "otherPlaceCheck") {
+                    otherCheck.checked = false;
+                    otherInput.value = "";
+                    otherInput.disabled = true;
+                }
+                if (optionWrapper._sourceAddButton) {
+                    optionWrapper._sourceAddButton.disabled = false;
+                    optionWrapper._sourceAddButton.textContent = "候補に追加";
+                }
+                optionWrapper.remove();
+            });
+            optionWrapper.appendChild(removeButton);
+        }
+
+        // 初期候補（名古屋・栄・伏見・その他）も削除できるようにする。
+        Array.from(locationGrid.querySelectorAll(":scope > label.choice-card")).forEach(label => {
+            const wrapper = document.createElement("div");
+            wrapper.className = "place-option";
+            label.parentNode.insertBefore(wrapper, label);
+            wrapper.appendChild(label);
+            addRemoveButton(wrapper, label.querySelector('input[type="checkbox"]'));
+        });
 
         otherCheck.addEventListener("change", () => {
 
@@ -395,13 +622,14 @@
 
         });
 
-        /* ==========================
-   場所選択
-========================== */
+
 
         const placeInputs =
+
             document.querySelectorAll(
+
                 '.location-grid input[type="checkbox"]'
+
             );
 
         placeInputs.forEach(input => {
@@ -409,20 +637,29 @@
             input.addEventListener("change", () => {
 
                 input.parentElement.classList.toggle(
+
                     "selected",
+
                     input.checked
+
                 );
 
             });
 
         });
 
-
         document.addEventListener("DOMContentLoaded", function () {
 
     const searchButton = document.getElementById("hotpepperSearchButton");
+
     const keywordInput = document.getElementById("hotpepperKeyword");
+    const genreInput = document.getElementById("hotpepperGenre");
+    const budgetInput = document.getElementById("hotpepperBudget");
+    const privateRoomInput = document.getElementById("hotpepperPrivateRoom");
+    const freeDrinkInput = document.getElementById("hotpepperFreeDrink");
+
     const resultsArea = document.getElementById("hotpepperResults");
+
     const loading = document.getElementById("hotpepperLoading");
 
     searchButton.addEventListener("click", searchHotpepper);
@@ -430,12 +667,14 @@
     keywordInput.addEventListener("keydown", function (event) {
 
         if (event.key === "Enter") {
+
             event.preventDefault();
+
             searchHotpepper();
+
         }
 
     });
-
 
     async function searchHotpepper() {
 
@@ -444,73 +683,93 @@
         if (!keyword) {
 
             resultsArea.innerHTML = `
+
                 <div class="hotpepper-message">
+
                     地域を入力してください
+
                 </div>
+
             `;
 
             return;
+
         }
 
-
         // 検索中表示
+
         loading.style.display = "block";
 
         resultsArea.innerHTML = "";
 
-
         // ボタンを一時的に無効化
-        searchButton.disabled = true;
-        searchButton.textContent = "検索中...";
 
+        searchButton.disabled = true;
+
+        searchButton.textContent = "検索中...";
 
         try {
 
-            const response = await fetch(
-                `/hotpepper/search?keyword=${encodeURIComponent(keyword)}`
-            );
+            const params = new URLSearchParams({ keyword: keyword });
 
+            if (genreInput.value) params.set("genre", genreInput.value);
+            if (budgetInput.value) params.set("budget", budgetInput.value);
+            if (privateRoomInput.checked) params.set("private_room", "1");
+            if (freeDrinkInput.checked) params.set("free_drink", "1");
+
+            const response = await fetch(`/hotpepper/search?${params.toString()}`);
 
             const data = await response.json();
-
 
             if (!response.ok || data.error) {
 
                 resultsArea.innerHTML = `
+
                     <div class="hotpepper-message">
+
                         店舗情報の取得に失敗しました
+
                     </div>
+
                 `;
 
                 return;
-            }
 
+            }
 
             if (!data.shops || data.shops.length === 0) {
 
                 resultsArea.innerHTML = `
+
                     <div class="hotpepper-message">
+
                         「${keyword}」の店舗が見つかりませんでした
+
                     </div>
+
                 `;
 
                 return;
-            }
 
+            }
 
             // 店舗一覧を作成
 
             data.shops.forEach(function (shop) {
 
                 const shopCard = document.createElement("div");
-
                 shopCard.className = "hotpepper-shop-card";
 
+                // 店名と住所でGoogleマップを検索し、座標だけで開くのを避ける
+                const mapQuery = `${shop.name || ""} ${shop.address || ""}`.trim();
+
+                const mapUrl = mapQuery
+                    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`
+                    : "";
 
                 shopCard.innerHTML = `
-
                     <div class="hotpepper-shop-name">
-                        ${escapeHtml(shop.name)}
+                        ${escapeHtml(shop.name || "店名なし")}
                     </div>
 
                     <div class="hotpepper-shop-info">
@@ -521,34 +780,65 @@
                         ${escapeHtml(shop.address || "住所情報なし")}
                     </div>
 
-                    ${
-                        shop.station
-                        ?
-                        `
+                    ${shop.station ? `
                         <div class="hotpepper-shop-info">
                             🚃 ${escapeHtml(shop.station)}
                         </div>
-                        `
-                        :
-                        ""
-                    }
+                    ` : ""}
 
-                    ${
-                        shop.budget
-                        ?
-                        `
+                    ${shop.budget ? `
                         <div class="hotpepper-shop-info">
                             💰 ${escapeHtml(shop.budget)}
                         </div>
-                        `
-                        :
-                        ""
-                    }
+                    ` : ""}
 
-                    ${
-                        shop.url
-                        ?
-                        `
+                    <button type="button" class="hotpepper-add-button">
+                        候補に追加
+                    </button>
+
+                    <button type="button" class="hotpepper-detail-button">
+                        店舗詳細を見る
+                    </button>
+
+                    <div class="hotpepper-shop-details" hidden>
+                        <div class="hotpepper-shop-info">
+                            ☎ 電話番号：${escapeHtml(shop.phone || "情報なし")}
+                        </div>
+                        <div class="hotpepper-shop-info">
+                            🕒 営業時間：${escapeHtml(shop.open || "情報なし")}
+                        </div>
+                        <div class="hotpepper-shop-info">
+                            🌙 定休日：${escapeHtml(shop.close || "情報なし")}
+                        </div>
+                        <div class="hotpepper-shop-info">
+                            🚶 アクセス：${escapeHtml(shop.access || "情報なし")}
+                        </div>
+                        <div class="hotpepper-shop-info">
+                            👥 収容人数：${escapeHtml(shop.capacity || "情報なし")}
+                        </div>
+                        <div class="hotpepper-shop-info">
+                            🅿 駐車場：${escapeHtml(shop.parking || "情報なし")}
+                        </div>
+                        <div class="hotpepper-shop-info">
+                            🚪 個室：${escapeHtml(shop.private_room || "情報なし")}
+                        </div>
+                        <div class="hotpepper-shop-info">
+                            🍻 飲み放題：${escapeHtml(shop.free_drink || "情報なし")}
+                        </div>
+
+                        ${mapUrl ? `
+                            <a
+                                href="${escapeHtml(mapUrl)}"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="hotpepper-map-link"
+                            >
+                                Googleマップで地図を見る
+                            </a>
+                        ` : ""}
+                    </div>
+
+                    ${shop.url ? `
                         <a
                             href="${escapeHtml(shop.url)}"
                             target="_blank"
@@ -557,18 +847,70 @@
                         >
                             ホットペッパーで見る
                         </a>
-                        `
-                        :
-                        ""
-                    }
-
+                    ` : ""}
                 `;
 
+                const detailButton = shopCard.querySelector(".hotpepper-detail-button");
+                const detailArea = shopCard.querySelector(".hotpepper-shop-details");
+
+                detailButton.addEventListener("click", function () {
+                    const isHidden = detailArea.hidden;
+                    detailArea.hidden = !isHidden;
+                    detailButton.textContent = isHidden
+                        ? "店舗詳細を閉じる"
+                        : "店舗詳細を見る";
+                });
+
+                // 検索結果の店舗を、イベント作成時の「場所候補」に追加する
+                const addButton = shopCard.querySelector(".hotpepper-add-button");
+                addButton.addEventListener("click", function () {
+                    // 場所候補には住所を含めず、店名だけを登録する。
+                    const shopName = (shop.name || "店名なし").trim();
+                    const safeCandidateName = shopName.replace(/[,，]/g, "、");
+
+                    const locationGrid = document.querySelector(".location-grid");
+                    const alreadyExists = Array.from(
+                        locationGrid.querySelectorAll('input[name="place"]')
+                    ).some(input => input.value === safeCandidateName);
+
+                    if (alreadyExists) {
+                        addButton.textContent = "追加済み";
+                        addButton.disabled = true;
+                        return;
+                    }
+
+                    const wrapper = document.createElement("div");
+                    wrapper.className = "place-option";
+
+                    const label = document.createElement("label");
+                    label.className = "choice-card selected";
+
+                    const checkbox = document.createElement("input");
+                    checkbox.type = "checkbox";
+                    checkbox.name = "place";
+                    checkbox.value = safeCandidateName;
+                    checkbox.checked = true;
+                    checkbox.addEventListener("change", function () {
+                        label.classList.toggle("selected", checkbox.checked);
+                    });
+
+                    const span = document.createElement("span");
+                    span.textContent = safeCandidateName;
+
+                    label.appendChild(checkbox);
+                    label.appendChild(span);
+                    wrapper.appendChild(label);
+                    // この候補を削除したら、検索結果側の追加ボタンを再び使えるようにする。
+                    wrapper._sourceAddButton = addButton;
+                    addRemoveButton(wrapper, checkbox);
+                    locationGrid.appendChild(wrapper);
+
+                    addButton.textContent = "追加済み";
+                    addButton.disabled = true;
+                });
 
                 resultsArea.appendChild(shopCard);
-
             });
-
 
         } catch (error) {
 
@@ -583,7 +925,6 @@
         } finally {
 
             loading.style.display = "none";
-
             searchButton.disabled = false;
             searchButton.textContent = "検索開始";
 
@@ -591,8 +932,8 @@
 
     }
 
-
     // HTMLとして解釈されないようにする
+
     function escapeHtml(value) {
 
         const div = document.createElement("div");
@@ -606,24 +947,30 @@
 });
 
 
-        /* ==========================
-           日付生成（曜日付き）
-        ========================== */
-
         const dateContainer =
+
             document.getElementById("dateContainer");
 
         const today =
+
             new Date();
 
         const week = [
+
             "日",
+
             "月",
+
             "火",
+
             "水",
+
             "木",
+
             "金",
+
             "土"
+
         ];
 
         for (let i = 0; i < 7; i++) {
@@ -633,40 +980,55 @@
             d.setDate(today.getDate() + i);
 
             const value =
+
                 `${d.getMonth() + 1}/${d.getDate()}`;
 
             const label =
+
                 document.createElement("label");
 
             label.className =
+
                 "choice-card";
 
             label.innerHTML = `
+
             <input
+
                 type="checkbox"
+
                 value="${value}">
 
             <span class="date-box">
 
                 <div class="date-number">
+
                     ${value}
+
                 </div>
 
                 <div class="date-week">
+
                     ${week[d.getDay()]}
+
                 </div>
 
             </span>
+
         `;
 
             const input =
+
                 label.querySelector("input");
 
             input.addEventListener("change", () => {
 
                 label.classList.toggle(
+
                     "selected",
+
                     input.checked
+
                 );
 
             });
@@ -676,48 +1038,60 @@
         }
 
 
-        /* ==========================
-           時間生成
-        ========================== */
-
         const times = [
 
             "18:00-20:00",
+
             "19:00-21:00",
+
             "20:00-22:00",
+
             "21:00-23:00"
 
         ];
 
         const timeContainer =
+
             document.getElementById("timeContainer");
 
         times.forEach(time => {
 
             const label =
+
                 document.createElement("label");
 
             label.className =
+
                 "choice-card";
 
             label.innerHTML = `
+
             <input
+
                 type="checkbox"
+
                 value="${time}">
 
             <span>
+
                 ${time}
+
             </span>
+
         `;
 
             const input =
+
                 label.querySelector("input");
 
             input.addEventListener("change", () => {
 
                 label.classList.toggle(
+
                     "selected",
+
                     input.checked
+
                 );
 
             });
@@ -727,20 +1101,23 @@
         });
 
 
-        /* ==========================
-           送信前処理
-        ========================== */
 
         document
+
             .querySelector("form")
+
             .addEventListener("submit", (e) => {
 
                 const places = [];
 
                 document
+
                     .querySelectorAll(
+
                         'input[name="place"]:checked'
+
                     )
+
                     .forEach(item => {
 
                         places.push(item.value);
@@ -748,40 +1125,61 @@
                     });
 
                 if (
+
                     otherCheck.checked &&
+
                     otherInput.value.trim()
+
                 ) {
 
                     places.push(
+
                         otherInput.value.trim()
+
                     );
 
                 }
 
                 const dates =
+
                     Array.from(
+
                         dateContainer.querySelectorAll(
+
                             "input:checked"
+
                         )
+
                     ).map(item => item.value);
 
                 const selectedTimes =
+
                     Array.from(
+
                         timeContainer.querySelectorAll(
+
                             "input:checked"
+
                         )
+
                     ).map(item => item.value);
 
                 if (
+
                     places.length === 0 ||
+
                     dates.length === 0 ||
+
                     selectedTimes.length === 0
+
                 ) {
 
                     e.preventDefault();
 
                     alert(
+
                         "場所・日程・時間を1つ以上選択してください。"
+
                     );
 
                     return;
@@ -789,20 +1187,27 @@
                 }
 
                 document
+
                     .getElementById("all_places")
+
                     .value = places.join(",");
 
                 document
+
                     .getElementById("all_dates")
+
                     .value = dates.join(",");
 
                 document
+
                     .getElementById("all_times")
+
                     .value = selectedTimes.join(",");
 
             });
 
     </script>
+
 </body>
 
 </html>
