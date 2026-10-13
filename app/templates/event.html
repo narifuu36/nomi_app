@@ -328,9 +328,10 @@
                             <span class="date-box">
 
                                 <div class="date-number">
-
                                     {{ date }}
-
+                                </div>
+                                <div class="date-week">
+                                    <!-- JavaScriptで曜日を表示 -->
                                 </div>
 
                             </span>
@@ -435,23 +436,13 @@
                 </button>
 
             </section>
-            {% if is_host %}
 
             <section class="finish-area">
-
-                <form method="POST" action="{{ url_for('finish_event') }}">
-
-                    <button type="submit" class="btn-finish">
-
-                        募集終了
-
-                    </button>
-
-                </form>
-
+                <a href="{{ url_for('event_billing', event_id=event.id) }}" class="btn-finish">
+                    勘定を計算する
+                </a>
             </section>
 
-            {% endif %}
 
             <section class="info-card">
 
@@ -562,6 +553,36 @@
                     );
 
                 });
+
+            // 日程候補に曜日を表示
+
+            document.querySelectorAll(".choice-card .date-week").forEach(element => {
+                const dateElement = element.parentElement.querySelector(".date-number");
+                const value = dateElement.textContent.trim();
+
+                // イベント作成画面と同じ M/D 形式を解析
+                const match = value.match(/^(\d{1,2})\/(\d{1,2})$/);
+                if (!match) return;
+
+                const month = Number(match[1]);
+                const day = Number(match[2]);
+                const now = new Date();
+
+                // 今年の日付として計算し、過去の日付なら翌年とする
+                let year = now.getFullYear();
+                let date = new Date(year, month - 1, day);
+
+                const today = new Date(year, now.getMonth(), now.getDate());
+
+                if (date < today) {
+                    year++;
+                    date = new Date(year, month - 1, day);
+                }
+
+                const week = ["日", "月", "火", "水", "木", "金", "土"];
+                element.textContent = week[date.getDay()];
+            });
+
 
         </script>
 

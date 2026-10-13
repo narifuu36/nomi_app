@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>勘定 - のみとも</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <style>
+        .billing-container {
+            max-width: 1000px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+
+        .billing-input {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .billing-input input {
+            width: 180px;
+            padding: 10px;
+        }
+
+        .billing-table-wrapper {
+            overflow-x: auto;
+        }
+
+        .billing-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        .billing-table th,
+        .billing-table td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+            text-align: center;
+        }
+
+        .billing-table th {
+            background: #f5f5f5;
+        }
+
+        .discount-switch {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .discount-switch input {
+            width: 20px;
+            height: 20px;
+            accent-color: #25855a;
+            cursor: pointer;
+        }
+
+        .adjustment-input {
+            width: 110px;
+            padding: 8px;
+        }
+
+        .billing-button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        .calculate-button {
+            background: #e8eefc;
+            color: #234b9b;
+        }
+
+        .save-button {
+            background: #25855a;
+            color: white;
+        }
+
+        .billing-summary {
+            background: #f7f8fa;
+            border-radius: 10px;
+            padding: 18px;
+            margin-top: 24px;
+        }
+
+        .billing-error {
+            color: #c62828;
+            font-weight: bold;
+        }
+
+        .discounted {
+            color: #25855a;
+            font-weight: bold;
+        }
+
+        @media (max-width: 600px) {
+            .billing-container {
+                padding: 12px;
+            }
+
+            .billing-table th,
+            .billing-table td {
+                padding: 8px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="header">
+        <div class="header-logo">
+            <span class="beer-icon">🍻</span>
+            <span class="header-title">のみとも</span>
+        </div>
+    </header>
+
+    <main class="billing-container">
+        <h1>飲み会の勘定</h1>
+        <p>イベント：{{ event.title }}</p>
+
+        {% if error %}
+        <p class="billing-error">{{ error }}</p>
+        {% endif %}
+
+        <form method="POST">
+            <div class="billing-input">
+                <label for="total_amount">会計の合計金額（円）</label>
+                <input type="number" id="total_amount" name="total_amount" min="0" step="1" value="{{ total_amount }}"
+                    required>
+
+                <button type="submit" name="action" value="calculate" class="billing-button calculate-button">
+                    🧮 勘定を計算
+                </button>
+            </div>
+
+            <h2>参加者ごとの支払額</h2>
+            <p>割引を適用する場合はスイッチをオンにしてください。</p>
+
+            {% if participants %}
+            <div class="billing-table-wrapper">
+                <table class="billing-table">
+                    <thead>
+                        <tr>
+                            <th>参加者</th>
+                            <th>割引</th>
+                            <th>割引額（円）</th>
+                            <th>基本料金</th>
+                            <th>最終支払額</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in participants %}
+                        <tr>
+                            <td>{{ p.name }}</td>
+                            <td>
+                                <label class="discount-switch">
+                                    <input type="checkbox" name="discount_enabled_{{ p.id }}" {% if p.discount_enabled
+                                        %}checked{% endif %}>
+                                    <span>適用</span>
+                                </label>
+                            </td>
+                            <td>
+                                <input type="number" class="adjustment-input" name="adjustment_{{ p.id }}"
+                                    value="{{ p.adjustment }}" step="1" aria-label="{{ p.name }}の割引額">
+                            </td>
+                            <td>{{ "{:,}".format(p.base_amount) }}円</td>
+
+                            <td>
+                                {% if p.discount_enabled %}
+                                <span class="discounted">
+                                    {{ "{:,}".format(p.final_amount) }}円
+                                </span>
+                                {% else %}
+                                {{ "{:,}".format(p.final_amount) }}円
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <button type="submit" name="action" value="save" class="billing-button save-button">
+                💾 勘定を保存・更新
+            </button>
+
+            {% else %}
+            <p>参加すると回答したユーザーはいません。</p>
+            {% endif %}
+        </form>
+
+        <section class="billing-summary">
+            <h2>会計の確認</h2>
+            <p>会計金額：{{ "{:,}".format(total_amount) }}円</p>
+            <p>支払額合計：{{ "{:,}".format(paid_total) }}円</p>
+            <p>
+                差額：
+                <strong>{{ "{:,}".format(difference) }}円</strong>
+            </p>
+
+            {% if difference == 0 %}
+            <p>会計金額と支払額が一致しています。</p>
+            {% elif difference > 0 %}
+            <p>あと{{ "{:,}".format(difference) }}円を配分する必要があります。</p>
+            {% else %}
+            <p>会計金額より{{ "{:,}".format(-difference) }}円多く設定されています。</p>
+            {% endif %}
+        </section>
+
+        <p style="margin-top: 24px;">
+            <a href="{{ url_for('index') }}">トップ画面に戻る</a>
+        </p>
+    </main>
+
+</body>
+
+</html>

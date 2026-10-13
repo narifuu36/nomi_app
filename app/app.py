@@ -16,6 +16,312 @@ HOTPEPPER_API_KEY = "50476680ea3687f7"
 # DB接続
 # ==========================
 
+
+
+def calculate_base_amount(total_amount, participant_count):
+    """基本料金を10円単位で切り捨てる"""
+    if total_amount < 0:
+        raise ValueError("合計金額は0円以上で入力してください。")
+    if participant_count <= 0:
+        raise ValueError("参加者がいません。")
+
+    return (total_amount // participant_count // 10) * 10
+
+
+
+
+def calculate_billing_amounts(total_amount, participants):
+    if total_amount < 0:
+        raise ValueError("合計金額は0円以上にしてください。")
+    if not participants:
+        raise ValueError("参加者がいません。")
+
+    count = len(participants)
+    base_amount = total_amount // count
+
+    discounted = [
+        p for p in participants if p["discount_enabled"]
+    ]
+    others = [
+        p for p in participants if not p["discount_enabled"]
+    ]
+
+    if discounted and not others:
+        raise ValueError(
+            "割引対象者以外の参加者が必要です。"
+        )
+
+    results = []
+
+    # 割引対象者の支払額を先に確定
+    discounted_total = 0
+
+    for p in discounted:
+        adjustment = int(p["adjustment"])
+
+        if adjustment > 0:
+            raise ValueError("割引額はマイナスで入力してください。")
+
+        final_amount = base_amount + adjustment
+
+        if final_amount < 0:
+            raise ValueError(
+                f"{p['name']}さんの支払額が0円未満になります。"
+            )
+
+        results.append({
+            "id": p["id"],
+            "name": p["name"],
+            "base_amount": base_amount,
+            "adjustment": adjustment,
+            "discount_enabled": 1,
+            "final_amount": final_amount,
+        })
+
+        discounted_total += final_amount
+
+    # 残額を割引対象外の参加者で1円単位まで均等分担
+    if others:
+        remaining = total_amount - discounted_total
+
+        if remaining < 0:
+            raise ValueError(
+                "割引対象者の支払額が合計金額を超えています。"
+            )
+
+        share, remainder = divmod(remaining, len(others))
+
+        for index, p in enumerate(others):
+            results.append({
+                "id": p["id"],
+                "name": p["name"],
+                "base_amount": base_amount,
+                "adjustment": int(p["adjustment"]),
+                "discount_enabled": 0,
+                "final_amount": share + (1 if index < remainder else 0),
+            })
+
+    # 元の参加者順に並び替える
+    order = {p["id"]: i for i, p in enumerate(participants)}
+    results.sort(key=lambda p: order[p["id"]])
+
+    # 合計金額との一致を保証
+    if sum(p["final_amount"] for p in results) != total_amount:
+        raise ValueError("支払額の合計が一致しません。")
+
+    return results
+
+
+
+
+
+
+
+@app.route("/event/<int:event_id>/billing", methods=["GET", "POST"])
+def event_billing(event_id):
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    user_id = session["user_id"]
+    conn = get_db()
+    conn.execute("PRAGMA foreign_keys = ON")
+
+    try:
+        event = conn.execute(
+            "SELECT * FROM events WHERE id = ?", (event_id,)
+        ).fetchone()
+
+        if event is None:
+            flash("イベントが見つかりません。")
+            return redirect(url_for("index"))
+
+        if event["host_user_id"] != user_id:
+            flash("勘定を編集できるのは主催者のみです。")
+            return redirect(url_for("index"))
+
+        participants = conn.execute("""
+            SELECT DISTINCT u.id, u.username AS name
+            FROM votes v
+            JOIN users u ON u.id = v.user_id
+            WHERE v.event_id = ? AND v.is_join = 1
+            ORDER BY u.id
+        """, (event_id,)).fetchall()
+
+        billing = conn.execute(
+            "SELECT * FROM billings WHERE event_id = ?", (event_id,)
+        ).fetchone()
+
+        details = {}
+        if billing:
+            rows = conn.execute("""
+                SELECT user_id, base_amount, adjustment,
+                       final_amount, discount_enabled
+                FROM billing_details
+                WHERE billing_id = ?
+            """, (billing["id"],)).fetchall()
+            details = {row["user_id"]: dict(row) for row in rows}
+
+        total_amount = billing["total_amount"] if billing else 0
+        calculated = False
+        error = None
+
+        if request.method == "POST":
+            action = request.form.get("action", "calculate")
+
+            try:
+                total_amount = int(request.form.get("total_amount", ""))
+
+                if total_amount < 0:
+                    raise ValueError("合計金額は0円以上にしてください。")
+
+                if not participants:
+                    raise ValueError("参加すると回答したユーザーがいません。")
+
+                # フォームの割引設定を参加者ごとに取得
+                input_participants = []
+
+                for p in participants:
+                    uid = p["id"]
+                    old = details.get(uid, {})
+
+                    enabled = (
+                        request.form.get(f"discount_enabled_{uid}") == "on"
+                    )
+
+                    raw_adjustment = request.form.get(
+                        f"adjustment_{uid}",
+                        str(old.get("adjustment", -1000))
+                    )
+                    adjustment = int(raw_adjustment)
+
+                    input_participants.append({
+                        "id": uid,
+                        "name": p["name"],
+                        "discount_enabled": enabled,
+                        "adjustment": adjustment,
+                    })
+
+                # 割引分を割引対象外の参加者で分担
+                display_participants = calculate_billing_amounts(
+                    total_amount, input_participants
+                )
+
+                details = {
+                    p["id"]: p for p in display_participants
+                }
+                calculated = True
+
+                if action == "save":
+                    conn.execute("BEGIN")
+
+                    conn.execute("""
+                        INSERT INTO billings (event_id, total_amount)
+                        VALUES (?, ?)
+                        ON CONFLICT(event_id) DO UPDATE SET
+                            total_amount = excluded.total_amount,
+                            updated_at = datetime('now', 'localtime')
+                    """, (event_id, total_amount))
+
+                    billing_id = conn.execute(
+                        "SELECT id FROM billings WHERE event_id = ?",
+                        (event_id,)
+                    ).fetchone()["id"]
+
+                    participant_ids = [p["id"] for p in participants]
+                    placeholders = ",".join("?" for _ in participant_ids)
+
+                    conn.execute(
+                        f"""DELETE FROM billing_details
+                            WHERE billing_id = ?
+                            AND user_id NOT IN ({placeholders})""",
+                        [billing_id, *participant_ids]
+                    )
+
+                    for p in display_participants:
+                        conn.execute("""
+                            INSERT INTO billing_details (
+                                billing_id, user_id, base_amount,
+                                adjustment, final_amount, discount_enabled
+                            )
+                            VALUES (?, ?, ?, ?, ?, ?)
+                            ON CONFLICT(billing_id, user_id) DO UPDATE SET
+                                base_amount = excluded.base_amount,
+                                adjustment = excluded.adjustment,
+                                final_amount = excluded.final_amount,
+                                discount_enabled = excluded.discount_enabled
+                        """, (
+                            billing_id,
+                            p["id"],
+                            p["base_amount"],
+                            p["adjustment"],
+                            p["final_amount"],
+                            p["discount_enabled"],
+                        ))
+
+                    conn.commit()
+                    flash("勘定を保存しました。")
+                    return redirect(url_for(
+                        "event_billing", event_id=event_id
+                    ))
+
+            except (ValueError, TypeError) as e:
+                conn.rollback()
+                error = str(e) or "金額を正しく入力してください。"
+
+            except Exception:
+                conn.rollback()
+                app.logger.exception("勘定処理に失敗しました")
+                error = "勘定処理に失敗しました。"
+
+        # 初期表示・エラー時の表示データ
+        if calculated:
+            shown_participants = display_participants
+        else:
+            base_amount = (
+                calculate_base_amount(total_amount, len(participants))
+                if participants and total_amount >= 0 else 0
+            )
+
+            shown_participants = []
+
+            for p in participants:
+                d = details.get(p["id"], {})
+                enabled = d.get("discount_enabled", 0)
+                adjustment = d.get("adjustment", -1000)
+
+                shown_participants.append({
+                    "id": p["id"],
+                    "name": p["name"],
+                    "base_amount": d.get("base_amount", base_amount),
+                    "adjustment": adjustment,
+                    "discount_enabled": enabled,
+                    "final_amount": d.get("final_amount", base_amount),
+                })
+
+        paid_total = sum(
+            p["final_amount"] for p in shown_participants
+        )
+        difference = total_amount - paid_total
+
+        return render_template(
+            "billing.html",
+            event=event,
+            participants=shown_participants,
+            total_amount=total_amount,
+            paid_total=paid_total,
+            difference=difference,
+            billing=billing,
+            calculated=calculated,
+            error=error,
+        )
+
+    finally:
+        conn.close()
+
+
+
+
+
 def get_db():
     conn = sqlite3.connect(DB_NAME)
     conn.row_factory = sqlite3.Row
@@ -27,7 +333,7 @@ def get_db():
 # ==========================
 
 def login_required():
-    return "username" in session
+    return "user_id" in session
 
 
 
@@ -113,11 +419,15 @@ def index():
     conn.close()
 
     return render_template(
-        "index.html",
-        username=session["username"],
-        event_exists=(event is not None),
-        event=event
+    "index.html",
+    username=session["username"],
+    event_exists=(event is not None),
+    event=event,
+    is_host=(
+        event is not None
+        and event["host_user_id"] == session.get("user_id")
     )
+)
 
 
 # ==========================
@@ -153,14 +463,16 @@ def login():
 
         conn.close()
 
+        
         if user:
 
+            session["user_id"] = user["id"]
             session["username"] = user["username"]
 
             flash("ログインしました")
 
             return redirect(url_for("index"))
-
+        
         return render_template(
             "login.html",
             error="ユーザー名またはパスワードが違います"
