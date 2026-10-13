@@ -1,7 +1,8 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash,jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 import sqlite3
 import requests
 import hashlib
+import resend  # ★ Resendライブラリをインポート
 from collections import Counter
 from datetime import datetime, timedelta
 
@@ -10,6 +11,32 @@ app.secret_key = "secret-key"
 
 DB_NAME = "nomikai.db"
 HOTPEPPER_API_KEY = "50476680ea3687f7"
+
+# ==========================
+# Resend (メール送信API) 設定
+# ==========================
+resend.api_key = ""  # ★取得したAPIキーに書き換え
+
+# 送信元アドレス (独自ドメイン設定前は 'onboarding@resend.dev' を使用します)
+SENDER_EMAIL = "onboarding@resend.dev"
+
+
+def send_mail(to_emails, subject, body):
+    """Resend APIを使ってメールを送信する共通関数"""
+    if not to_emails:
+        return True
+
+    try:
+        resend.Emails.send({
+            "from": f"飲み会調整アプリ <{SENDER_EMAIL}>",
+            "to": to_emails,
+            "subject": subject,
+            "text": body,
+        })
+        return True
+    except Exception as e:
+        app.logger.error(f"メール送信エラー: {e}")
+        return False
 
 
 # ==========================
@@ -30,6 +57,9 @@ def login_required():
     return "username" in session
 
 
+# ==========================
+# イベント自動終了処理
+# ==========================
 
 def auto_close_event():
 
@@ -54,6 +84,16 @@ def auto_close_event():
 
         if datetime.now() >= end_time:
 
+            # 参加表明（is_join=1）したメンバーのメールアドレスを取得
+            participants = conn.execute("""
+                SELECT DISTINCT users.email
+                FROM votes
+                JOIN users ON votes.user_id = users.id
+                WHERE votes.event_id = ? AND votes.is_join = 1
+            """, (event["id"],)).fetchall()
+
+            emails = [p["email"] for p in participants if p["email"]]
+
             conn.execute("""
                 UPDATE events
                 SET
@@ -63,6 +103,14 @@ def auto_close_event():
             """, (event["id"],))
 
             conn.commit()
+
+            # メール通知（自動終了）
+            if emails:
+                send_mail(
+                    to_emails=emails,
+                    subject=f"【自動終了】飲み会「{event['title']}」の募集期間が終了しました",
+                    body=f"「{event['title']}」の募集期限（24時間）が経過したため、自動的に締め切られました。\n結果をアプリで確認してください。"
+                )
 
     conn.close()
 
@@ -252,7 +300,8 @@ def signup():
         "signup.html"
     )
 
-    # ==========================
+
+# ==========================
 # CREATE EVENT
 # ==========================
 
@@ -326,7 +375,28 @@ def create_event():
         )
 
         conn.commit()
+
+        # 自分以外の全ユーザーのメールアドレスを取得
+        other_users = conn.execute(
+            """
+            SELECT email
+            FROM users
+            WHERE email IS NOT NULL AND email != '' AND id != ?
+            """,
+            (user["id"],)
+        ).fetchall()
+
+        emails = [u["email"] for u in other_users]
+
         conn.close()
+
+        # メール通知（新規募集）
+        if emails:
+            send_mail(
+                to_emails=emails,
+                subject=f"【新規募集】{session['username']}さんが飲み会「{title}」を作成しました！",
+                body=f"{session['username']}さんが新しい飲み会「{title}」の募集を開始しました。\n日程や場所の希望をアプリから投票してください！"
+            )
 
         flash("イベントを作成しました")
 
@@ -451,27 +521,30 @@ def event():
         conn.close()
 
         return redirect(
-    url_for(
-        "result",
-        voted=1
-    )
-)
+            url_for(
+                "result",
+                voted=1
+            )
+        )
 
     conn.close()
 
     return render_template(
-    "event.html",
-    username=session["username"],
-    event=event,
-    host_name=event["host_name"],
-    remain_hours=hours,
-    remain_minutes=minutes,
-    places=event["places"].split(",") if event["places"] else [],
-    dates=event["dates"].split(",") if event["dates"] else [],
-    times=event["times"].split(",") if event["times"] else []
-)
+        "event.html",
+        username=session["username"],
+        event=event,
+        host_name=event["host_name"],
+        remain_hours=hours,
+        remain_minutes=minutes,
+        places=event["places"].split(",") if event["places"] else [],
+        dates=event["dates"].split(",") if event["dates"] else [],
+        times=event["times"].split(",") if event["times"] else []
+    )
 
 
+# ==========================
+# HOTPEPPER SEARCH
+# ==========================
 
 @app.route("/hotpepper/search")
 def hotpepper_search():
@@ -558,7 +631,7 @@ def hotpepper_search():
         }), 502
 
 
-    # ==========================
+# ==========================
 # RESULT
 # ==========================
 
@@ -655,17 +728,17 @@ def result():
     conn.close()
 
     return render_template(
-    "result.html",
-    username=session["username"],
-    event=event,
-    host_name=event["host_name"],
-    participants=participants,
-    place_results=place_counter.items(),
-    date_results=date_counter.items(),
-    time_results=time_counter.items(),
-    voted=request.args.get("voted"),
-    is_host=is_host
-)
+        "result.html",
+        username=session["username"],
+        event=event,
+        host_name=event["host_name"],
+        participants=participants,
+        place_results=place_counter.items(),
+        date_results=date_counter.items(),
+        time_results=time_counter.items(),
+        voted=request.args.get("voted"),
+        is_host=is_host
+    )
 
 
 # ==========================
@@ -707,6 +780,19 @@ def complete():
 
         return redirect(url_for("result"))
 
+    # 参加表明（is_join=1）したメンバーのメールアドレスを取得
+    participants = conn.execute(
+        """
+        SELECT DISTINCT users.email
+        FROM votes
+        JOIN users ON votes.user_id = users.id
+        WHERE votes.event_id = ? AND votes.is_join = 1
+        """,
+        (event["id"],)
+    ).fetchall()
+
+    emails = [p["email"] for p in participants if p["email"]]
+
     conn.execute(
         """
         UPDATE events
@@ -721,7 +807,19 @@ def complete():
     conn.commit()
     conn.close()
 
-    flash("イベントを作成しました")
+    # メール通知（手動終了）
+    if emails:
+        sent = send_mail(
+            to_emails=emails,
+            subject=f"【決定】飲み会「{event['title']}」の調整が完了しました！",
+            body=f"「{event['title']}」の募集が主催者によって締め切られました。\n集計結果・決定内容はアプリからご確認いただけます。"
+        )
+        if sent:
+            flash("イベントを終了し、参加者に通知メールを送信しました")
+        else:
+            flash("イベントを終了しましたが、メール送信に失敗しました")
+    else:
+        flash("イベントを終了しました")
 
     return redirect(url_for("index"))
 
