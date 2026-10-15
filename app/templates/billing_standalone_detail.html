@@ -1,0 +1,48 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>勘定詳細 - のみとも</title>
+    <style>
+        body { max-width: 800px; margin: 30px auto; padding: 0 16px; font-family: sans-serif; color: #333; }
+        table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+        th, td { border-bottom: 1px solid #ddd; padding: 12px 8px; text-align: left; }
+        .link { display: inline-block; padding: 10px 16px; background: #333; color: white; text-decoration: none; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>{{ billing.title }}</h1>
+    <p>作成者：{{ billing.creator_name }}</p>
+    <p>合計金額：<strong>{{ "{:,}".format(billing.total_amount) }}円</strong></p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>参加者</th>
+                <th>割引</th>
+                <th>調整額</th>
+                <th>支払額</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in participants %}
+            <tr>
+                <td>{{ p.username }}</td>
+                <td>{{ "あり" if p.discount_enabled else "なし" }}</td>
+                <td>{{ "{:,}".format(p.adjustment) }}円</td>
+                <td><strong>{{ "{:,}".format(p.final_amount) }}円</strong></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <p>
+        支払額合計：
+        <strong>{{ "{:,}".format(participants | sum(attribute='final_amount')) }}円</strong>
+    </p>
+
+    <a class="link" href="{{ url_for('standalone_billing') }}">勘定画面に戻る</a>
+</body>
+</html>

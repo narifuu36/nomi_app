@@ -94,13 +94,11 @@
 
             {% endif %}
 
-            {% if event_exists and event and is_host %}
-            <a href="{{ url_for('event_billing', event_id=event.id) }}" class="btn-primary-large"
-                style="margin-top: 12px;">
-                <span class="btn-icon">🧮</span>
-                勘定する
-            </a>
-            {% endif %}
+            <div class="standalone-billing-link">
+                <a href="{{ url_for('standalone_billing') }}">
+                    🧮 勘定する
+                </a>
+            </div>
 
             <div class="usage-guide-card">
                 <div class="usage-guide-header">

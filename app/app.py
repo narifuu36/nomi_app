@@ -21,6 +21,272 @@ def get_db():
     conn.row_factory = sqlite3.Row
     return conn
 
+def calculate_billing_amounts(total_amount, participants):
+    """参加者ごとの支払額を計算する。"""
+
+    if total_amount < 0:
+        raise ValueError("合計金額は0円以上にしてください。")
+
+    if not participants:
+        raise ValueError("参加者がいません。")
+
+    count = len(participants)
+    base_amount = total_amount // count
+
+    discounted = [p for p in participants if p["discount_enabled"]]
+    others = [p for p in participants if not p["discount_enabled"]]
+
+    if discounted and not others:
+        raise ValueError(
+            "割引対象外の参加者を1人以上設定してください。"
+        )
+
+    results = []
+    discounted_total = 0
+
+    for p in discounted:
+        adjustment = p["adjustment"]
+
+        if adjustment > 0:
+            raise ValueError("調整額は0円以下にしてください。")
+
+        final_amount = base_amount + adjustment
+
+        if final_amount < 0:
+            raise ValueError("支払額がマイナスになっています。")
+
+        discounted_total += final_amount
+
+        results.append({
+            "id": p["id"],
+            "username": p["username"],
+            "discount_enabled": 1,
+            "adjustment": adjustment,
+            "base_amount": base_amount,
+            "final_amount": final_amount,
+        })
+
+    remaining = total_amount - discounted_total
+
+    if others:
+        amount, remainder = divmod(remaining, len(others))
+
+        for i, p in enumerate(others):
+            results.append({
+                "id": p["id"],
+                "username": p["username"],
+                "discount_enabled": 0,
+                "adjustment": 0,
+                "base_amount": base_amount,
+                "final_amount": amount + (1 if i < remainder else 0),
+            })
+
+    if sum(p["final_amount"] for p in results) != total_amount:
+        raise ValueError("支払額の合計が総額と一致しません。")
+
+    return results
+
+
+@app.route("/event/<int:event_id>/billing", methods=["GET", "POST"])
+def event_billing(event_id):
+    if "username" not in session:
+        return redirect(url_for("login"))
+
+    conn = get_db()
+
+    try:
+        # イベントと主催者を取得
+        event = conn.execute("""
+            SELECT events.*, users.username AS host_name
+            FROM events
+            JOIN users ON users.id = events.host_user_id
+            WHERE events.id = ?
+        """, (event_id,)).fetchone()
+
+        if event is None:
+            return "イベントが見つかりません。", 404
+
+        if session["username"] != event["host_name"]:
+            return "主催者のみ利用できます。", 403
+
+        # 参加すると回答したユーザーを取得
+        participant_rows = conn.execute("""
+            SELECT DISTINCT users.id, users.username
+            FROM votes
+            JOIN users ON users.id = votes.user_id
+            WHERE votes.event_id = ?
+              AND votes.is_join = 1
+            ORDER BY users.id
+        """, (event_id,)).fetchall()
+
+        if not participant_rows:
+            participants = []
+        else:
+            participants = [
+                {
+                    "id": p["id"],
+                    "username": p["username"],
+                    "discount_enabled": 0,
+                    "adjustment": -1000,
+                    "base_amount": 0,
+                    "final_amount": 0,
+                }
+                for p in participant_rows
+            ]
+
+        # 既存の勘定データを取得
+        billing = conn.execute("""
+            SELECT *
+            FROM billings
+            WHERE event_id = ?
+            ORDER BY id DESC
+            LIMIT 1
+        """, (event_id,)).fetchone()
+
+        saved_details = {}
+
+        if billing:
+            detail_rows = conn.execute("""
+                SELECT *
+                FROM billing_details
+                WHERE billing_id = ?
+            """, (billing["id"],)).fetchall()
+
+            saved_details = {
+                row["user_id"]: row for row in detail_rows
+            }
+
+            for p in participants:
+                saved = saved_details.get(p["id"])
+
+                if saved:
+                    p["discount_enabled"] = saved["discount_enabled"]
+                    p["adjustment"] = saved["adjustment"]
+                    p["base_amount"] = saved["base_amount"]
+                    p["final_amount"] = saved["final_amount"]
+
+        total_amount = billing["total_amount"] if billing else 0
+        calculated = False
+        error = None
+
+        if request.method == "POST":
+            action = request.form.get("action", "calculate")
+
+            try:
+                total_amount = int(request.form.get("total_amount", "0"))
+
+                if total_amount < 0:
+                    raise ValueError("合計金額は0円以上にしてください。")
+
+                for p in participants:
+                    p["discount_enabled"] = int(
+                        request.form.get(
+                            f"discount_enabled_{p['id']}", "0"
+                        ) == "1"
+                    )
+
+                    adjustment_text = request.form.get(
+                        f"adjustment_{p['id']}", "-1000"
+                    )
+
+                    p["adjustment"] = (
+                        int(adjustment_text)
+                        if p["discount_enabled"]
+                        else 0
+                    )
+
+                results = calculate_billing_amounts(
+                    total_amount, participants
+                )
+
+                participants = results
+                calculated = True
+
+                if action == "save":
+                    # 既存の勘定を更新。なければ新規作成
+                    if billing:
+                        billing_id = billing["id"]
+
+                        conn.execute("""
+                            UPDATE billings
+                            SET total_amount = ?,
+                                updated_at = datetime('now','localtime')
+                            WHERE id = ?
+                        """, (total_amount, billing_id))
+                    else:
+                        cursor = conn.execute("""
+                            INSERT INTO billings (event_id, total_amount)
+                            VALUES (?, ?)
+                        """, (event_id, total_amount))
+
+                        billing_id = cursor.lastrowid
+
+                    # 各参加者の金額を保存
+                    for p in participants:
+                        existing = conn.execute("""
+                            SELECT id
+                            FROM billing_details
+                            WHERE billing_id = ? AND user_id = ?
+                        """, (billing_id, p["id"])).fetchone()
+
+                        values = (
+                            p["base_amount"],
+                            p["adjustment"],
+                            p["final_amount"],
+                            p["discount_enabled"],
+                        )
+
+                        if existing:
+                            conn.execute("""
+                                UPDATE billing_details
+                                SET base_amount = ?,
+                                    adjustment = ?,
+                                    final_amount = ?,
+                                    discount_enabled = ?
+                                WHERE id = ?
+                            """, (*values, existing["id"]))
+                        else:
+                            conn.execute("""
+                                INSERT INTO billing_details (
+                                    billing_id,
+                                    user_id,
+                                    base_amount,
+                                    adjustment,
+                                    final_amount,
+                                    discount_enabled
+                                )
+                                VALUES (?, ?, ?, ?, ?, ?)
+                            """, (
+                                billing_id,
+                                p["id"],
+                                p["base_amount"],
+                                p["adjustment"],
+                                p["final_amount"],
+                                p["discount_enabled"],
+                            ))
+
+                    conn.commit()
+                    return redirect(
+                        url_for("event_billing", event_id=event_id)
+                    )
+
+            except ValueError as e:
+                error = str(e)
+            except Exception:
+                conn.rollback()
+                raise
+
+        return render_template(
+            "billing.html",
+            event=event,
+            participants=participants,
+            total_amount=total_amount,
+            calculated=calculated,
+            error=error,
+        )
+
+    finally:
+        conn.close()
 
 # ==========================
 # ログイン確認
@@ -810,6 +1076,308 @@ def logout():
 
     return redirect(url_for("login"))
 
+
+def ensure_standalone_billing_tables(conn):
+    """イベント投票とは独立した勘定用テーブルを用意する。"""
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS standalone_billings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL DEFAULT '',
+            total_amount INTEGER NOT NULL,
+            created_by_user_id INTEGER NOT NULL,
+            created_at TEXT NOT NULL
+                DEFAULT (datetime('now', 'localtime'))
+        )
+    """)
+
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS standalone_billing_details (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            billing_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            username TEXT NOT NULL,
+            base_amount INTEGER NOT NULL,
+            adjustment INTEGER NOT NULL DEFAULT 0,
+            final_amount INTEGER NOT NULL,
+            discount_enabled INTEGER NOT NULL DEFAULT 0
+        )
+    """)
+
+    conn.commit()
+
+
+def calculate_standalone_amounts(total_amount, participants):
+    """支払額を計算し、総額と一致させる。"""
+    if total_amount < 0:
+        raise ValueError("合計金額は0円以上にしてください。")
+
+    if not participants:
+        raise ValueError("参加者を1人以上選択してください。")
+
+    count = len(participants)
+    base_amount = total_amount // count
+
+    discounted = [p for p in participants if p["discount_enabled"]]
+    others = [p for p in participants if not p["discount_enabled"]]
+
+    if discounted and not others:
+        raise ValueError(
+            "割引対象外の参加者を1人以上選択してください。"
+        )
+
+    results = []
+    discounted_total = 0
+
+    for p in discounted:
+        adjustment = p["adjustment"]
+
+        if adjustment > 0:
+            raise ValueError("割引の調整額は0円以下にしてください。")
+
+        final_amount = base_amount + adjustment
+
+        if final_amount < 0:
+            raise ValueError("支払額がマイナスになっています。")
+
+        discounted_total += final_amount
+
+        results.append({
+            **p,
+            "base_amount": base_amount,
+            "final_amount": final_amount,
+        })
+
+    remaining = total_amount - discounted_total
+
+    if others:
+        amount, remainder = divmod(remaining, len(others))
+
+        for i, p in enumerate(others):
+            results.append({
+                **p,
+                "base_amount": base_amount,
+                "adjustment": 0,
+                "final_amount": amount + (1 if i < remainder else 0),
+            })
+
+    if sum(p["final_amount"] for p in results) != total_amount:
+        raise ValueError("支払額の合計が総額と一致しません。")
+
+    return results
+
+
+@app.route("/billing", methods=["GET", "POST"])
+def standalone_billing():
+    """イベントに依存しない勘定作成・計算画面。"""
+    if "username" not in session:
+        return redirect(url_for("login"))
+
+    conn = get_db()
+
+    try:
+        ensure_standalone_billing_tables(conn)
+
+        current_user = conn.execute(
+            "SELECT id FROM users WHERE username = ?",
+            (session["username"],)
+        ).fetchone()
+
+        if current_user is None:
+            session.clear()
+            return redirect(url_for("login"))
+
+        users = conn.execute("""
+            SELECT id, username
+            FROM users
+            ORDER BY username
+        """).fetchall()
+
+        selected_ids = []
+        participants = []
+        total_amount = 0
+        title = ""
+        calculated = False
+        error = None
+
+        if request.method == "POST":
+            title = request.form.get("title", "").strip()
+            action = request.form.get("action", "calculate")
+
+            try:
+                total_amount = int(request.form.get("total_amount", "0"))
+
+                if total_amount < 0:
+                    raise ValueError("合計金額は0円以上にしてください。")
+
+                selected_ids = list(dict.fromkeys(
+                    int(value)
+                    for value in request.form.getlist("user_ids")
+                ))
+
+                if not selected_ids:
+                    raise ValueError("参加者を1人以上選択してください。")
+
+                placeholders = ",".join("?" for _ in selected_ids)
+
+                rows = conn.execute(
+                    f"""
+                    SELECT id, username
+                    FROM users
+                    WHERE id IN ({placeholders})
+                    ORDER BY username
+                    """,
+                    selected_ids
+                ).fetchall()
+
+                if len(rows) != len(selected_ids):
+                    raise ValueError("選択したユーザーを確認できません。")
+
+                participants = []
+
+                for user in rows:
+                    user_id = user["id"]
+                    discount_enabled = (
+                        request.form.get(f"discount_enabled_{user_id}") == "1"
+                    )
+
+                    try:
+                        adjustment = int(
+                            request.form.get(
+                                f"adjustment_{user_id}", "-1000"
+                            )
+                        )
+                    except ValueError:
+                        raise ValueError("調整額は整数で入力してください。")
+
+                    participants.append({
+                        "id": user_id,
+                        "username": user["username"],
+                        "discount_enabled": int(discount_enabled),
+                        "adjustment": adjustment if discount_enabled else 0,
+                        "base_amount": 0,
+                        "final_amount": 0,
+                    })
+
+                participants = calculate_standalone_amounts(
+                    total_amount, participants
+                )
+                calculated = True
+
+                if action == "save":
+                    cursor = conn.execute("""
+                        INSERT INTO standalone_billings (
+                            title, total_amount, created_by_user_id
+                        )
+                        VALUES (?, ?, ?)
+                    """, (
+                        title or "勘定",
+                        total_amount,
+                        current_user["id"],
+                    ))
+
+                    billing_id = cursor.lastrowid
+
+                    for p in participants:
+                        conn.execute("""
+                            INSERT INTO standalone_billing_details (
+                                billing_id,
+                                user_id,
+                                username,
+                                base_amount,
+                                adjustment,
+                                final_amount,
+                                discount_enabled
+                            )
+                            VALUES (?, ?, ?, ?, ?, ?, ?)
+                        """, (
+                            billing_id,
+                            p["id"],
+                            p["username"],
+                            p["base_amount"],
+                            p["adjustment"],
+                            p["final_amount"],
+                            p["discount_enabled"],
+                        ))
+
+                    conn.commit()
+
+                    return redirect(
+                        url_for(
+                            "standalone_billing_detail",
+                            billing_id=billing_id
+                        )
+                    )
+
+            except ValueError as e:
+                error = str(e)
+
+        history = conn.execute("""
+            SELECT
+                b.id,
+                b.title,
+                b.total_amount,
+                b.created_at,
+                u.username AS creator_name
+            FROM standalone_billings AS b
+            JOIN users AS u ON u.id = b.created_by_user_id
+            ORDER BY b.id DESC
+            LIMIT 50
+        """).fetchall()
+
+        return render_template(
+            "billing_standalone.html",
+            users=users,
+            participants=participants,
+            selected_ids=selected_ids,
+            total_amount=total_amount,
+            title=title,
+            calculated=calculated,
+            error=error,
+            history=history,
+        )
+
+    finally:
+        conn.close()
+
+
+@app.route("/billing/<int:billing_id>")
+def standalone_billing_detail(billing_id):
+    """保存した勘定の詳細を表示する。"""
+    if "username" not in session:
+        return redirect(url_for("login"))
+
+    conn = get_db()
+
+    try:
+        ensure_standalone_billing_tables(conn)
+
+        billing = conn.execute("""
+            SELECT
+                b.*,
+                u.username AS creator_name
+            FROM standalone_billings AS b
+            JOIN users AS u ON u.id = b.created_by_user_id
+            WHERE b.id = ?
+        """, (billing_id,)).fetchone()
+
+        if billing is None:
+            return "勘定記録が見つかりません。", 404
+
+        participants = conn.execute("""
+            SELECT *
+            FROM standalone_billing_details
+            WHERE billing_id = ?
+            ORDER BY id
+        """, (billing_id,)).fetchall()
+
+        return render_template(
+            "billing_standalone_detail.html",
+            billing=billing,
+            participants=participants,
+        )
+
+    finally:
+        conn.close()
 
 # ==========================
 # MAIN

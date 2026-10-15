@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>勘定 - のみとも</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            max-width: 800px;
+            margin: 30px auto;
+            padding: 0 16px;
+            color: #333;
+        }
+        h1 { margin-bottom: 8px; }
+        .total-input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 12px;
+            font-size: 18px;
+            margin: 8px 0 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+        }
+        th, td {
+            border-bottom: 1px solid #ddd;
+            padding: 12px 8px;
+            text-align: left;
+        }
+        input[type="number"] {
+            width: 90px;
+            padding: 7px;
+        }
+        button, .back-link {
+            display: inline-block;
+            padding: 11px 18px;
+            border: none;
+            border-radius: 6px;
+            background: #333;
+            color: white;
+            text-decoration: none;
+            cursor: pointer;
+            margin: 6px 6px 6px 0;
+        }
+        .error { color: #c00; }
+        .note { color: #666; font-size: 14px; }
+        .amount { font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>勘定</h1>
+    <p>{{ event.title }} の参加費を計算します。</p>
+
+    {% if error %}
+        <p class="error">{{ error }}</p>
+    {% endif %}
+
+    {% if participants %}
+    <form method="post">
+        <label for="total_amount">合計金額（円）</label>
+        <input
+            class="total-input"
+            type="number"
+            id="total_amount"
+            name="total_amount"
+            min="0"
+            step="1"
+            value="{{ total_amount }}"
+            required
+        >
+
+        <p class="note">
+            割引対象者には調整額を設定できます。例：1000円引きは -1000。
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>参加者</th>
+                    <th>割引</th>
+                    <th>調整額</th>
+                    <th>支払額</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in participants %}
+                <tr>
+                    <td>{{ p.username }}</td>
+                    <td>
+                        <input
+                            type="checkbox"
+                            name="discount_enabled_{{ p.id }}"
+                            value="1"
+                            {% if p.discount_enabled %}checked{% endif %}
+                        >
+                    </td>
+                    <td>
+                        <input
+                            type="number"
+                            name="adjustment_{{ p.id }}"
+                            value="{{ p.adjustment }}"
+                            step="1"
+                        >
+                    </td>
+                    <td class="amount">
+                        {% if calculated %}
+                            {{ "{:,}".format(p.final_amount) }}円
+                        {% else %}
+                            {% if p.final_amount is not none %}
+                                {{ "{:,}".format(p.final_amount) }}円
+                            {% else %}
+                                未計算
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if calculated %}
+            <p>
+                支払額の合計：
+                <strong>
+                    {{ "{:,}".format(participants | sum(attribute='final_amount')) }}円
+                </strong>
+            </p>
+        {% endif %}
+
+        <button type="submit" name="action" value="calculate">
+            計算する
+        </button>
+        <button type="submit" name="action" value="save">
+            計算結果を保存
+        </button>
+    </form>
+    {% else %}
+        <p>参加すると回答したユーザーがいません。</p>
+    {% endif %}
+
+    <p>
+        <a class="back-link" href="{{ url_for('index') }}">トップに戻る</a>
+    </p>
+</body>
+</html>

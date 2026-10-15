@@ -1,0 +1,134 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>勘定する - のみとも</title>
+    <style>
+        body { max-width: 900px; margin: 30px auto; padding: 0 16px; font-family: sans-serif; color: #333; }
+        input, button { padding: 9px; margin: 4px 0; }
+        input[type="number"] { width: 120px; }
+        table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+        th, td { border-bottom: 1px solid #ddd; padding: 10px 6px; text-align: left; }
+        button, .link { display: inline-block; padding: 10px 16px; margin: 8px 5px 8px 0; background: #333; color: white; border: 0; border-radius: 5px; text-decoration: none; cursor: pointer; }
+        .error { color: #c00; }
+        .users { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; margin: 12px 0 20px; }
+        .user-option { border: 1px solid #ddd; border-radius: 6px; padding: 10px; }
+        .muted { color: #666; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <h1>勘定する</h1>
+    <p>イベントを作成しなくても、登録ユーザーを選んで勘定できます。</p>
+
+    {% if error %}
+        <p class="error">{{ error }}</p>
+    {% endif %}
+
+    <form method="post">
+        <label for="title">勘定名（任意）</label><br>
+        <input id="title" name="title" type="text"
+               value="{{ title }}" placeholder="例：飲み会の勘定"><br>
+
+        <label for="total_amount">合計金額（円）</label><br>
+        <input id="total_amount" name="total_amount" type="number"
+               min="0" step="1" value="{{ total_amount }}" required>
+
+        <h2>参加者を選択</h2>
+        <div class="users">
+            {% for user in users %}
+            <label class="user-option">
+                <input type="checkbox" name="user_ids"
+                       value="{{ user.id }}"
+                       {% if user.id in selected_ids %}checked{% endif %}>
+                {{ user.username }}
+            </label>
+            {% endfor %}
+        </div>
+
+        {% if participants %}
+        <h2>割引設定と支払額</h2>
+        <p class="muted">
+            割引する人にチェックし、調整額を入力します。
+            例：1,000円引きは -1000。割引しない人の残額は自動調整されます。
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ユーザー</th>
+                    <th>割引</th>
+                    <th>調整額（円）</th>
+                    <th>支払額</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in participants %}
+                <tr>
+                    <td>{{ p.username }}</td>
+                    <td>
+                        <input type="checkbox"
+                               name="discount_enabled_{{ p.id }}"
+                               value="1"
+                               {% if p.discount_enabled %}checked{% endif %}>
+                    </td>
+                    <td>
+                        <input type="number"
+                               name="adjustment_{{ p.id }}"
+                               value="{{ p.adjustment }}" step="1">
+                    </td>
+                    <td>
+                        {% if calculated %}
+                            {{ "{:,}".format(p.final_amount) }}円
+                        {% else %}
+                            未計算
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if calculated %}
+        <p>
+            支払額の合計：
+            <strong>
+                {{ "{:,}".format(participants | sum(attribute='final_amount')) }}円
+            </strong>
+        </p>
+        {% endif %}
+        {% endif %}
+
+        <button type="submit" name="action" value="calculate">計算する</button>
+        <button type="submit" name="action" value="save">計算結果を保存</button>
+    </form>
+
+    <hr>
+
+    <h2>保存した勘定履歴</h2>
+    {% if history %}
+    <table>
+        <thead>
+            <tr><th>勘定名</th><th>合計金額</th><th>作成者</th><th>詳細</th></tr>
+        </thead>
+        <tbody>
+            {% for item in history %}
+            <tr>
+                <td>{{ item.title }}</td>
+                <td>{{ "{:,}".format(item.total_amount) }}円</td>
+                <td>{{ item.creator_name }}</td>
+                <td>
+                    <a href="{{ url_for('standalone_billing_detail', billing_id=item.id) }}">確認</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>保存された勘定はありません。</p>
+    {% endif %}
+
+    <p><a class="link" href="{{ url_for('index') }}">トップに戻る</a></p>
+</body>
+</html>
