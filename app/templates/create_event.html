@@ -13,7 +13,11 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 
 
+    
+
+
     <style>
+        /* 既存の店舗詳細・候補追加のデザインは維持 */
         .hotpepper-detail-button,
         .hotpepper-map-link {
             display: inline-block;
@@ -27,22 +31,14 @@
             text-decoration: none;
             cursor: pointer;
         }
-
         .hotpepper-shop-details {
             margin-top: 12px;
             padding: 12px;
             border-radius: 8px;
             background: #fffaf5;
         }
-
-        .hotpepper-shop-details[hidden] {
-            display: none;
-        }
-
-        .hotpepper-map-link {
-            margin-bottom: 4px;
-        }
-
+        .hotpepper-shop-details[hidden] { display: none; }
+        .hotpepper-map-link { margin-bottom: 4px; }
         .hotpepper-add-button {
             display: inline-block;
             margin-top: 10px;
@@ -55,47 +51,98 @@
             font: inherit;
             cursor: pointer;
         }
+        .hotpepper-add-button:disabled { opacity: 0.65; cursor: default; }
 
-        .hotpepper-add-button:disabled {
-            opacity: 0.65;
-            cursor: default;
+        /* 場所候補：参考画像に合わせたカード風デザイン */
+        .main-content .form-card:has(.location-grid) {
+            overflow: hidden;
+            border: 1px solid #f0eadf;
+            border-radius: 22px;
+            background: #fffdf8;
+            box-shadow: 0 8px 24px rgba(112, 82, 28, 0.06);
         }
-
-        /* 場所候補は横一列に並べ、候補が増えたら横スクロールで選択する */
-        .location-grid {
-            display: flex !important;
-            flex-wrap: nowrap !important;
-            gap: 10px;
-            overflow-x: auto;
-            overflow-y: hidden;
-            padding: 8px 4px 12px;
-            max-width: 100%;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: thin;
+        .main-content .form-card:has(.location-grid) > .section-header {
+            gap: 16px;
+            padding: 24px 24px 20px;
+            border-bottom: 1px solid #eee8dd;
         }
-
-        .place-option {
+        .main-content .form-card:has(.location-grid) > .section-header .section-icon {
+            display: grid;
+            place-items: center;
+            width: 56px;
+            height: 56px;
+            flex: 0 0 56px;
+            border-radius: 50%;
+            background: #fff1cf;
+        }
+        .main-content .form-card:has(.location-grid) .section-title {
+            margin: 0 0 6px;
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: #171717;
+        }
+        .main-content .form-card:has(.location-grid) .section-subtitle {
+            margin: 0;
+            color: #77736c;
+        }
+        .main-content .form-card:has(.location-grid) .section-tag {
+            display: inline-block;
+            margin-top: 8px;
+        }
+        .main-content .form-card:has(.location-grid) .location-grid {
+            display: grid !important;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            flex-wrap: initial !important;
+            gap: 12px;
+            overflow: visible;
+            padding: 22px 24px 14px;
+            max-width: none;
+        }
+        .main-content .form-card:has(.location-grid) .place-option {
             display: flex;
-            flex: 0 0 auto;
+            min-width: 0;
+            max-width: none;
+            flex: initial;
             flex-direction: column;
             align-items: stretch;
-            gap: 5px;
-            min-width: 105px;
-            max-width: 220px;
+            gap: 6px;
         }
-
-        .place-option .choice-card {
+        .main-content .form-card:has(.location-grid) .place-option .choice-card {
+            display: flex;
+            align-items: center;
+            gap: 10px;
             box-sizing: border-box;
             width: 100%;
-            min-height: 48px;
-            white-space: nowrap;
+            min-height: 58px;
+            padding: 12px 14px;
+            border: 1.5px solid #dedbd4;
+            border-radius: 13px;
+            background: #fff;
+            white-space: normal;
+            cursor: pointer;
         }
-
-        .place-option .choice-card span {
+        .main-content .form-card:has(.location-grid) .place-option .choice-card.selected {
+            border-color: #e8a51c;
+            background: #fff8e8;
+            box-shadow: inset 0 0 0 1px #e8a51c;
+        }
+        .main-content .form-card:has(.location-grid) .place-option .choice-card input {
+            width: 19px;
+            height: 19px;
+            flex: 0 0 auto;
+            accent-color: #eea10b;
+        }
+        .main-content .form-card:has(.location-grid) .place-option .choice-card span {
             overflow: hidden;
             text-overflow: ellipsis;
+            overflow-wrap: anywhere;
         }
-
+        .main-content .form-card:has(.location-grid) #otherPlaceInput {
+            width: calc(100% - 48px);
+            box-sizing: border-box;
+            margin: 0 24px 24px;
+            border-radius: 12px;
+        }
         .place-remove-button {
             width: 100%;
             padding: 5px 8px;
@@ -107,9 +154,104 @@
             font-size: 0.85rem;
             cursor: pointer;
         }
+        .place-remove-button:hover { background: #ffe5e5; }
 
-        .place-remove-button:hover {
-            background: #ffe5e5;
+        /* ホットペッパー：オレンジの開閉ボタン。検索機能自体は既存のまま */
+        .hotpepper-accordion-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            width: 100%;
+            min-height: 76px;
+            padding: 18px 22px;
+            border: 0;
+            border-radius: 18px;
+            background: linear-gradient(180deg, #ffb21b 0%, #f39200 100%);
+            box-shadow: 0 5px 0 #c97900, 0 9px 15px rgba(151, 95, 0, .16);
+            color: #fff;
+            font: inherit;
+            font-size: 1.05rem;
+            font-weight: 800;
+            line-height: 1.5;
+            text-align: center;
+            cursor: pointer;
+        }
+        .hotpepper-accordion-button:hover { filter: brightness(1.03); }
+        .hotpepper-accordion-button .hp-search-icon {
+            font-size: 1.65rem;
+            line-height: 1;
+        }
+        .hotpepper-accordion-button .hp-chevron {
+            margin-left: auto;
+            transition: transform .2s ease;
+        }
+        .hotpepper-accordion-button[aria-expanded="true"] .hp-chevron {
+            transform: rotate(180deg);
+        }
+        .hotpepper-accordion-panel {
+            margin-top: 14px;
+            padding: 22px;
+            border: 1px solid #f0eadf;
+            border-radius: 18px;
+            background: #fffdf8;
+        }
+        .hotpepper-accordion-panel[hidden] { display: none !important; }
+        .hotpepper-search-section .hotpepper-search-box {
+            display: grid;
+            gap: 10px;
+        }
+        .hotpepper-search-section .form-input {
+            box-sizing: border-box;
+            width: 100%;
+            min-height: 46px;
+            border-radius: 10px;
+        }
+        .hotpepper-search-section .form-label { font-weight: 700; }
+        .hotpepper-search-button {
+            min-height: 48px;
+            border: 0;
+            border-radius: 10px;
+            background: #f3a20b;
+            color: #fff;
+            font: inherit;
+            font-weight: 800;
+            cursor: pointer;
+        }
+        .hotpepper-search-button:hover { background: #e89100; }
+
+        @media (max-width: 640px) {
+            .main-content .form-card:has(.location-grid) > .section-header {
+                padding: 18px 16px;
+            }
+            .main-content .form-card:has(.location-grid) > .section-header .section-icon {
+                width: 46px;
+                height: 46px;
+                flex-basis: 46px;
+            }
+            .main-content .form-card:has(.location-grid) .section-title { font-size: 1.15rem; }
+            .main-content .form-card:has(.location-grid) .location-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 9px;
+                padding: 18px 16px 12px;
+            }
+            .main-content .form-card:has(.location-grid) .place-option .choice-card {
+                min-height: 54px;
+                padding: 10px;
+                gap: 8px;
+                font-size: .9rem;
+            }
+            .main-content .form-card:has(.location-grid) #otherPlaceInput {
+                width: calc(100% - 32px);
+                margin: 0 16px 18px;
+            }
+            .hotpepper-accordion-button {
+                min-height: 68px;
+                gap: 8px;
+                padding: 16px 12px;
+                font-size: .95rem;
+            }
+            .hotpepper-accordion-panel { padding: 16px; }
         }
     </style>
 
@@ -323,6 +465,17 @@
 
             </section>
 
+            <section class="hotpepper-accordion-section">
+                <button type="button"
+                        class="hotpepper-accordion-button"
+                        id="hotpepperAccordionToggle"
+                        aria-expanded="false"
+                        aria-controls="hotpepperAccordionPanel">
+                    <span class="hp-search-icon" aria-hidden="true">⌕</span>
+                    <span>ホットペッパーで店舗を検索して候補に追加</span>
+                    <span class="hp-chevron" aria-hidden="true">⌄</span>
+                </button>
+                <div class="hotpepper-accordion-panel" id="hotpepperAccordionPanel" hidden>
             <div class="form-group hotpepper-search-section">
 
     <label class="form-label">ホットペッパー店舗検索</label>
@@ -398,6 +551,9 @@
         </div>
 
     </div>
+
+                </div>
+            </section>
 
             <!-- =========================
 
@@ -566,6 +722,16 @@
     </main>
 
     <script>
+        // ホットペッパー検索条件の開閉（既存の検索・追加処理は変更しない）
+        const hotpepperAccordionToggle = document.getElementById("hotpepperAccordionToggle");
+        const hotpepperAccordionPanel = document.getElementById("hotpepperAccordionPanel");
+
+        hotpepperAccordionToggle.addEventListener("click", () => {
+            const isExpanded = hotpepperAccordionToggle.getAttribute("aria-expanded") === "true";
+            hotpepperAccordionToggle.setAttribute("aria-expanded", String(!isExpanded));
+            hotpepperAccordionPanel.hidden = isExpanded;
+        });
+
 
 
         const otherCheck =
