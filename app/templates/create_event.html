@@ -19,39 +19,110 @@
     <style>
         /* 既存の店舗詳細・候補追加のデザインは維持 */
         .hotpepper-detail-button,
-        .hotpepper-map-link {
-            display: inline-block;
-            margin-top: 10px;
-            padding: 9px 12px;
+        .hotpepper-map-link,
+        .hotpepper-shop-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            min-height: 40px;
+            box-sizing: border-box;
+            padding: 9px 14px;
             border: 1px solid #e58b35;
-            border-radius: 8px;
+            border-radius: 10px;
             background: #fff7ef;
             color: #8a4b12;
             font: inherit;
+            font-weight: 600;
             text-decoration: none;
             cursor: pointer;
+            max-width: 100%;
+            white-space: normal;
+            text-align: center;
         }
-        .hotpepper-shop-details {
+        .hotpepper-shop-link { background: #fff; }
+        .hotpepper-detail-button:hover,
+        .hotpepper-map-link:hover,
+        .hotpepper-shop-link:hover { background: #ffeddc; }
+        .hotpepper-shop-card {
+            box-sizing: border-box;
+            width: 100%;
+            min-width: 0;
+            margin: 14px 0;
+            padding: 18px;
+            border: 1px solid #eee3d6;
+            border-radius: 16px;
+            background: #fff;
+            box-shadow: 0 4px 14px rgba(65, 45, 20, .05);
+            overflow-wrap: anywhere;
+        }
+        .hotpepper-shop-heading {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-bottom: 12px;
+        }
+        .hotpepper-shop-name {
+            color: #242424;
+            font-size: 1.08rem;
+            font-weight: 800;
+            line-height: 1.5;
+            overflow-wrap: anywhere;
+        }
+        .hotpepper-shop-info {
+            margin: 6px 0;
+            color: #555;
+            font-size: .92rem;
+            line-height: 1.65;
+            overflow-wrap: anywhere;
+            word-break: normal;
+        }
+        .hotpepper-shop-summary {
+            display: grid;
+            gap: 5px;
+            margin: 10px 0 14px;
+        }
+        .hotpepper-shop-actions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
             margin-top: 12px;
-            padding: 12px;
-            border-radius: 8px;
-            background: #fffaf5;
         }
-        .hotpepper-shop-details[hidden] { display: none; }
-        .hotpepper-map-link { margin-bottom: 4px; }
         .hotpepper-add-button {
-            display: inline-block;
-            margin-top: 10px;
-            margin-right: 8px;
-            padding: 9px 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 40px;
+            box-sizing: border-box;
+            padding: 9px 14px;
             border: 1px solid #2f855a;
-            border-radius: 8px;
+            border-radius: 10px;
             background: #f0fff4;
             color: #276749;
             font: inherit;
+            font-weight: 600;
             cursor: pointer;
         }
-        .hotpepper-add-button:disabled { opacity: 0.65; cursor: default; }
+        .hotpepper-add-button:hover { background: #dcfce7; }
+        .hotpepper-add-button:disabled { opacity: .65; cursor: default; }
+        .hotpepper-shop-details {
+            margin-top: 14px;
+            padding: 14px;
+            border: 1px solid #f1e5d9;
+            border-radius: 12px;
+            background: #fffaf5;
+            min-width: 0;
+        }
+        .hotpepper-shop-details[hidden] { display: none; }
+        .hotpepper-detail-grid { display: grid; gap: 4px; }
+        .hotpepper-map-link { margin-top: 10px; }
+        .hotpepper-shop-link { margin-top: 0; }
+        .hotpepper-results { min-width: 0; }
+        @media (max-width: 640px) {
+            .hotpepper-shop-card { padding: 14px; }
+            .hotpepper-shop-actions > * { flex: 1 1 140px; }
+        }
 
         /* 場所候補：参考画像に合わせたカード風デザイン */
         .main-content .form-card:has(.location-grid) {
@@ -103,9 +174,9 @@
             min-width: 0;
             max-width: none;
             flex: initial;
-            flex-direction: column;
-            align-items: stretch;
-            gap: 6px;
+            flex-direction: row;
+            align-items: center;
+            gap: 8px;
         }
         .main-content .form-card:has(.location-grid) .place-option .choice-card {
             display: flex;
@@ -120,6 +191,10 @@
             background: #fff;
             white-space: normal;
             cursor: pointer;
+        }
+        .main-content .form-card:has(.location-grid) .place-option .choice-card {
+            flex: 1 1 auto;
+            min-width: 0;
         }
         .main-content .form-card:has(.location-grid) .place-option .choice-card.selected {
             border-color: #e8a51c;
@@ -144,17 +219,35 @@
             border-radius: 12px;
         }
         .place-remove-button {
-            width: 100%;
-            padding: 5px 8px;
-            border: 1px solid #d66;
-            border-radius: 6px;
+            display: grid;
+            place-items: center;
+            flex: 0 0 34px;
+            width: 34px;
+            height: 34px;
+            padding: 0;
+            border: 1px solid #f1b5b5;
+            border-radius: 50%;
             background: #fff5f5;
-            color: #a22;
+            color: #d62828;
             font: inherit;
-            font-size: 0.85rem;
+            font-size: 1.35rem;
+            font-weight: 800;
+            line-height: 1;
             cursor: pointer;
         }
         .place-remove-button:hover { background: #ffe5e5; }
+        .hotpepper-accordion-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #f0eadf;
+            border-radius: 22px;
+            background: #fff;
+            box-shadow: 0 8px 24px rgba(112, 82, 28, 0.06);
+        }
+        .hotpepper-accordion-button { box-sizing: border-box; }
+        @media (max-width: 640px) {
+            .hotpepper-accordion-section { padding: 14px; border-radius: 16px; }
+        }
 
         /* ホットペッパー：オレンジの開閉ボタン。検索機能自体は既存のまま */
         .hotpepper-accordion-button {
@@ -300,13 +393,17 @@
             </span>
 
             <div class="dropdown-menu">
-
-                <a href="{{ url_for('logout') }}">
-
-                    ログアウト
-
+                <a href="{{ url_for('mypage_settings') }}">
+                    マイページ<br>通知設定
                 </a>
 
+                <a href="{{ url_for('billing_history') }}">
+                    会計履歴を確認
+                </a>
+
+                <a href="{{ url_for('logout') }}">
+                    ログアウト
+                </a>
             </div>
 
         </div>
@@ -750,7 +847,7 @@
             const removeButton = document.createElement("button");
             removeButton.type = "button";
             removeButton.className = "place-remove-button";
-            removeButton.textContent = "候補を削除";
+            removeButton.textContent = "×";
             removeButton.setAttribute("aria-label", `${checkbox.value || checkbox.nextElementSibling?.textContent || "場所候補"}を削除`);
             removeButton.addEventListener("click", () => {
                 if (checkbox.id === "otherPlaceCheck") {
@@ -934,86 +1031,33 @@
                     : "";
 
                 shopCard.innerHTML = `
-                    <div class="hotpepper-shop-name">
-                        ${escapeHtml(shop.name || "店名なし")}
+                    <div class="hotpepper-shop-heading">
+                        <div class="hotpepper-shop-name">${escapeHtml(shop.name || "店名なし")}</div>
+                        <div class="hotpepper-shop-info">${escapeHtml(shop.genre || "ジャンル情報なし")}</div>
                     </div>
-
-                    <div class="hotpepper-shop-info">
-                        ${escapeHtml(shop.genre || "ジャンル情報なし")}
+                    <div class="hotpepper-shop-summary">
+                        <div class="hotpepper-shop-info">📍 ${escapeHtml(shop.address || "住所情報なし")}</div>
+                        ${shop.station ? `<div class="hotpepper-shop-info">🚃 ${escapeHtml(shop.station)}</div>` : ""}
+                        ${shop.budget ? `<div class="hotpepper-shop-info">💰 ${escapeHtml(shop.budget)}</div>` : ""}
                     </div>
-
-                    <div class="hotpepper-shop-info">
-                        ${escapeHtml(shop.address || "住所情報なし")}
+                    <div class="hotpepper-shop-actions">
+                        <button type="button" class="hotpepper-add-button">候補に追加</button>
+                        <button type="button" class="hotpepper-detail-button" aria-expanded="false">店舗詳細を見る</button>
+                        ${shop.url ? `<a href="${escapeHtml(shop.url)}" target="_blank" rel="noopener noreferrer" class="hotpepper-shop-link">ホットペッパーで見る ↗</a>` : ""}
                     </div>
-
-                    ${shop.station ? `
-                        <div class="hotpepper-shop-info">
-                            🚃 ${escapeHtml(shop.station)}
-                        </div>
-                    ` : ""}
-
-                    ${shop.budget ? `
-                        <div class="hotpepper-shop-info">
-                            💰 ${escapeHtml(shop.budget)}
-                        </div>
-                    ` : ""}
-
-                    <button type="button" class="hotpepper-add-button">
-                        候補に追加
-                    </button>
-
-                    <button type="button" class="hotpepper-detail-button">
-                        店舗詳細を見る
-                    </button>
-
                     <div class="hotpepper-shop-details" hidden>
-                        <div class="hotpepper-shop-info">
-                            ☎ 電話番号：${escapeHtml(shop.phone || "情報なし")}
+                        <div class="hotpepper-detail-grid">
+                            <div class="hotpepper-shop-info">☎ 電話番号：${escapeHtml(shop.phone || "情報なし")}</div>
+                            <div class="hotpepper-shop-info">🕒 営業時間：${escapeHtml(shop.open || "情報なし")}</div>
+                            <div class="hotpepper-shop-info">🌙 定休日：${escapeHtml(shop.close || "情報なし")}</div>
+                            <div class="hotpepper-shop-info">🚶 アクセス：${escapeHtml(shop.access || "情報なし")}</div>
+                            <div class="hotpepper-shop-info">👥 収容人数：${escapeHtml(shop.capacity || "情報なし")}</div>
+                            <div class="hotpepper-shop-info">🅿 駐車場：${escapeHtml(shop.parking || "情報なし")}</div>
+                            <div class="hotpepper-shop-info">🚪 個室：${escapeHtml(shop.private_room || "情報なし")}</div>
+                            <div class="hotpepper-shop-info">🍻 飲み放題：${escapeHtml(shop.free_drink || "情報なし")}</div>
                         </div>
-                        <div class="hotpepper-shop-info">
-                            🕒 営業時間：${escapeHtml(shop.open || "情報なし")}
-                        </div>
-                        <div class="hotpepper-shop-info">
-                            🌙 定休日：${escapeHtml(shop.close || "情報なし")}
-                        </div>
-                        <div class="hotpepper-shop-info">
-                            🚶 アクセス：${escapeHtml(shop.access || "情報なし")}
-                        </div>
-                        <div class="hotpepper-shop-info">
-                            👥 収容人数：${escapeHtml(shop.capacity || "情報なし")}
-                        </div>
-                        <div class="hotpepper-shop-info">
-                            🅿 駐車場：${escapeHtml(shop.parking || "情報なし")}
-                        </div>
-                        <div class="hotpepper-shop-info">
-                            🚪 個室：${escapeHtml(shop.private_room || "情報なし")}
-                        </div>
-                        <div class="hotpepper-shop-info">
-                            🍻 飲み放題：${escapeHtml(shop.free_drink || "情報なし")}
-                        </div>
-
-                        ${mapUrl ? `
-                            <a
-                                href="${escapeHtml(mapUrl)}"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                class="hotpepper-map-link"
-                            >
-                                Googleマップで地図を見る
-                            </a>
-                        ` : ""}
+                        ${mapUrl ? `<a href="${escapeHtml(mapUrl)}" target="_blank" rel="noopener noreferrer" class="hotpepper-map-link">Googleマップで地図を見る ↗</a>` : ""}
                     </div>
-
-                    ${shop.url ? `
-                        <a
-                            href="${escapeHtml(shop.url)}"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            class="hotpepper-shop-link"
-                        >
-                            ホットペッパーで見る
-                        </a>
-                    ` : ""}
                 `;
 
                 const detailButton = shopCard.querySelector(".hotpepper-detail-button");
@@ -1022,8 +1066,9 @@
                 detailButton.addEventListener("click", function () {
                     const isHidden = detailArea.hidden;
                     detailArea.hidden = !isHidden;
+                    detailButton.setAttribute("aria-expanded", String(isHidden));
                     detailButton.textContent = isHidden
-                        ? "店舗詳細を閉じる"
+                        ? "詳細を閉じる"
                         : "店舗詳細を見る";
                 });
 

@@ -1489,6 +1489,55 @@ def reset_password():
 # LOGOUT
 # ==========================
 
+
+
+# ==========================
+# マイページ・通知設定（仮画面）
+# ==========================
+
+@app.route("/mypage/settings")
+def mypage_settings():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    return render_template(
+        "mypage_settings.html",
+        username=session["username"]
+    )
+
+
+# ==========================
+# 会計履歴
+# ==========================
+
+@app.route("/billing/history")
+def billing_history():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    conn = get_db()
+    try:
+        history = conn.execute("""
+            SELECT
+                b.id,
+                b.title,
+                b.total_amount,
+                b.created_at,
+                u.username AS creator_name
+            FROM standalone_billings AS b
+            JOIN users AS u ON u.id = b.created_by_user_id
+            ORDER BY b.id DESC
+        """).fetchall()
+
+        return render_template(
+            "billing_history.html",
+            username=session["username"],
+            history=history
+        )
+    finally:
+        conn.close()
+
+
 @app.route("/logout")
 def logout():
 

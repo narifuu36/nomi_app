@@ -27,12 +27,17 @@
             <span class="dropdown-arrow">▼</span>
 
             <div class="dropdown-menu">
+                <a href="{{ url_for('mypage_settings') }}">
+                    マイページ<br>通知設定
+                </a>
 
+                <a href="{{ url_for('billing_history') }}">
+                    会計履歴を確認
+                </a>
 
                 <a href="{{ url_for('logout') }}">
                     ログアウト
                 </a>
-
             </div>
 
         </div>
@@ -127,7 +132,7 @@
         </nav>
     </footer>
 
-    
+
 </body>
 
 </html>
