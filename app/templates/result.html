@@ -1,386 +1,796 @@
 <!DOCTYPE html>
 <html lang="ja">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>集計結果 - {{ event.title }}</title>
-
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 
-    
     <style>
+        body {
+            background: #fffaf2;
+        }
+
+        .result-page {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 18px 100px;
+        }
+
+        .result-header-card {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr 1fr;
+            align-items: center;
+            gap: 24px;
+            padding: 30px;
+            background: linear-gradient(120deg, #fff, #fff8ed);
+            border: 1px solid #f3e5d2;
+            border-radius: 18px;
+            box-shadow: 0 4px 15px rgba(120, 80, 30, .06);
+            margin-bottom: 25px;
+        }
+
+        .result-title-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            min-width: 0;
+        }
+
+        .large-beer-icon {
+            width: 90px;
+            height: 90px;
+            flex-shrink: 0;
+            display: grid;
+            place-items: center;
+            background: #fff3df;
+            border-radius: 50%;
+            font-size: 45px;
+        }
+
+        .result-title {
+            font-size: clamp(21px, 3vw, 32px);
+            margin: 0;
+            color: #24364b;
+            overflow-wrap: anywhere;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            background: #fff0d7;
+            color: #d88920;
+            font-size: 12px;
+            vertical-align: middle;
+        }
+
+        .result-subtitle {
+            margin: 10px 0 0;
+            color: #555;
+        }
+
+        .header-info {
+            border-left: 1px solid #eadfce;
+            padding: 12px 20px;
+        }
+
+        .header-info-label {
+            color: #555;
+            font-size: 14px;
+        }
+
+        .countdown {
+            color: #e99c31;
+            font-size: 25px;
+            font-weight: bold;
+            margin-top: 8px;
+            white-space: nowrap;
+        }
+
+        .created-time {
+            margin-top: 10px;
+            font-size: 17px;
+            color: #333;
+        }
+
+        .success-notice {
+            background: #effaf0;
+            border: 1px solid #c9e8cb;
+            color: #27743b;
+            border-radius: 10px;
+            padding: 13px 18px;
+            margin-bottom: 20px;
+        }
+
+        .result-section,
+        .result-card {
+            background: #fff;
+            border: 1px solid #f0e8dc;
+            border-radius: 14px;
+            padding: 22px;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 12px rgba(100, 70, 30, .04);
+        }
+
+        .section-title {
+            font-size: 20px;
+            color: #26374b;
+            margin: 0;
+        }
+
+        .participant-count {
+            color: #e99b2d;
+        }
+
+        .participant-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 18px;
+        }
+
+        .participant-badge {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            background: #fff7eb;
+            border: 1px solid #f3dfc1;
+            padding: 9px 14px;
+            border-radius: 30px;
+        }
+
+        .voting-results-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 18px;
+        }
+
+        .result-card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 22px;
+        }
+
+        .result-card-title {
+            font-size: 17px;
+            margin: 0;
+            color: #28384b;
+        }
+
         .vote-bar-item {
-            margin-bottom: 18px;
+            margin-bottom: 20px;
         }
 
         .vote-bar-top {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 6px;
+            gap: 10px;
+            margin-bottom: 7px;
             font-size: 14px;
             font-weight: 600;
         }
 
+        .vote-bar-top span:first-child {
+            overflow-wrap: anywhere;
+        }
+
         .vote-bar-bg {
-            width: 100%;
-            height: 16px;
-            background: #e5e7eb;
-            border-radius: 999px;
+            height: 13px;
+            background: #f0eee9;
+            border-radius: 20px;
             overflow: hidden;
         }
 
         .vote-bar-fill {
             height: 100%;
-            background: linear-gradient(90deg,
-                    #f59e0b,
-                    #f97316);
-            border-radius: 999px;
-            transition: width .3s;
+            background: linear-gradient(90deg, #f6bd61, #f18b21);
+            border-radius: 20px;
+        }
+
+        .note-text {
+            color: #888;
+            font-size: 12px;
+            margin-top: 15px;
+        }
+
+        /* おすすめプラン */
+
+        .recommended-plan-card {
+            padding: 25px;
+            background: linear-gradient(120deg, #fff8eb, #ffefd9);
+            border: 1px solid #f6dfbd;
+            border-radius: 15px;
+            margin-top: 22px;
+        }
+
+        .recommended-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .recommended-header h2 {
+            color: #d98c27;
+        }
+
+        .recommend-description {
+            color: #555;
+            font-size: 13px;
+            margin-bottom: 18px;
+        }
+
+        .plan-option {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 17px;
+            margin-bottom: 12px;
+            border: 1px solid #f0d7b3;
+            border-radius: 12px;
+            background: rgba(255,255,255,.85);
+            cursor: pointer;
+            transition: .2s;
+        }
+
+        .plan-option:has(input:checked) {
+            border: 2px solid #f2a12c;
+            background: #fff;
+        }
+
+        .plan-option input {
+            width: 19px;
+            height: 19px;
+            accent-color: #ed9b25;
+            flex-shrink: 0;
+        }
+
+        .plan-option-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .plan-label {
+            color: #d98c27;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .plan-combination {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 9px;
+            margin-top: 7px;
+        }
+
+        .plan-item {
+            padding: 8px 13px;
+            border-radius: 8px;
+            background: #fff3df;
+            color: #c77b1d;
+            font-weight: bold;
+            overflow-wrap: anywhere;
+        }
+
+        .plan-cross {
+            color: #aaa;
+        }
+
+        .plan-votes {
+            color: #d98c27;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        .final-plan {
+            padding: 20px;
+            background: #fff;
+            border: 2px solid #e9a13b;
+            border-radius: 12px;
+        }
+
+        .final-plan-title {
+            font-weight: bold;
+            color: #d98c27;
+            margin-bottom: 12px;
+        }
+
+        .host-menu {
+            position: fixed;
+            right: 24px;
+            bottom: 24px;
+            z-index: 100;
+            width: 235px;
+            padding: 17px;
+            border: 1px solid #f0d7b3;
+            border-radius: 15px;
+            background: #fff1d9;
+            box-shadow: 0 5px 18px rgba(80, 55, 20, .18);
+        }
+
+        .host-menu h3 {
+            margin: 0 0 13px;
+            font-size: 16px;
+            color: #28384b;
+        }
+
+        .host-complete-button {
+            width: 100%;
+            padding: 13px 10px;
+            border: none;
+            border-radius: 9px;
+            background: linear-gradient(90deg, #ffb12e, #f28b12);
+            color: white;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .host-complete-button:hover {
+            opacity: .9;
+        }
+
+        .host-menu-note {
+            margin: 10px 0 0;
+            font-size: 11px;
+            color: #666;
+            text-align: center;
+        }
+
+        .bottom-actions-grid {
+            display: flex;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .back-button {
+            display: inline-block;
+            padding: 13px 25px;
+            border-radius: 9px;
+            background: #fff;
+            border: 1px solid #e9a13b;
+            color: #c77b1d;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        @media (max-width: 850px) {
+            .result-header-card {
+                grid-template-columns: 1fr;
+            }
+
+            .header-info {
+                border-left: none;
+                border-top: 1px solid #eadfce;
+                padding: 15px 0 0;
+            }
+
+            .voting-results-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .host-menu {
+                right: 12px;
+                bottom: 12px;
+                width: 205px;
+            }
+
+            .result-page {
+                padding-bottom: 150px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .result-header-card {
+                padding: 18px;
+            }
+
+            .large-beer-icon {
+                width: 60px;
+                height: 60px;
+                font-size: 30px;
+            }
+
+            .plan-combination {
+                gap: 5px;
+            }
+
+            .plan-item {
+                padding: 7px 9px;
+                font-size: 13px;
+            }
         }
     </style>
 </head>
 
 <body>
 
-    <header class="header">
-        <div class="header-logo">
-            <span class="beer-icon">🍻</span>
-            <span class="header-title">のみとも</span>
+<header class="header">
+    <div class="header-logo">
+        <span class="beer-icon">🍻</span>
+        <span class="header-title">のみとも</span>
+    </div>
+
+    <div class="header-user dropdown">
+        <span class="user-icon">👤</span>
+        <span class="user-name">{{ username }}</span>
+        <span class="dropdown-arrow">▼</span>
+
+        <div class="dropdown-menu">
+            <a href="{{ url_for('mypage_settings') }}">
+                マイページ<br>通知設定
+            </a>
+            <a href="{{ url_for('billing_history') }}">
+                会計履歴を確認
+            </a>
+            <a href="{{ url_for('logout') }}">
+                ログアウト
+            </a>
+        </div>
+    </div>
+</header>
+
+<main class="result-page">
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="success-notice">
+                {{ messages[0] }}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- イベント情報 -->
+
+    <section class="result-header-card">
+
+        <div class="result-title-wrapper">
+            <span class="large-beer-icon">🍻</span>
+
+            <div>
+                <h1 class="result-title">
+                    {{ event.title }}
+
+                    <span class="status-badge">
+                        {% if event.is_active %}
+                            募集中
+                        {% else %}
+                            終了
+                        {% endif %}
+                    </span>
+                </h1>
+
+                <p class="result-subtitle">
+                    みんなの投票結果を確認しましょう！
+                </p>
+            </div>
         </div>
 
-        <div class="header-user dropdown">
-
-            <span class="user-icon">👤</span>
-
-            <span class="user-name">
-                {{ username }}
-            </span>
-
-            <span class="dropdown-arrow">▼</span>
-
-            <div class="dropdown-menu">
-                <a href="{{ url_for('mypage_settings') }}">
-                    マイページ<br>通知設定
-                </a>
-
-                <a href="{{ url_for('billing_history') }}">
-                    会計履歴を確認
-                </a>
-
-                <a href="{{ url_for('logout') }}">
-                    ログアウト
-                </a>
+        <div class="header-info">
+            <div class="header-info-label">
+                ⏱ 終了まで残り
             </div>
 
+            <div class="countdown"
+                 id="countdown"
+                 data-seconds="{{ remain_hours * 3600 + remain_minutes * 60 + remain_seconds }}">
+                {% if event.is_active %}
+                    {{ remain_hours }}時間
+                    {{ remain_minutes }}分
+                    {{ remain_seconds }}秒
+                {% else %}
+                    募集終了
+                {% endif %}
+            </div>
         </div>
-    </header>
 
+        <div class="header-info">
+            <div class="header-info-label">
+                📅 作成日時
+            </div>
 
-    <main class="main-content">
+            <div class="created-time">
+                {{ created_at }}
+            </div>
+        </div>
 
-        <!-- タイトル -->
-        <section class="result-header-card">
+    </section>
 
-            <div class="result-title-wrapper">
+    {% if voted %}
+    <div class="success-notice">
+        ✅ 投票が送信されました
+    </div>
+    {% endif %}
 
-                <span class="large-beer-icon">
-                    🍻
-                </span>
+    <!-- 参加者一覧 -->
 
-                <div>
+    <section class="result-section">
 
-                    <h1 class="result-title">
+        <h2 class="section-title">
+            👥 参加者一覧
+            <span class="participant-count">
+                ({{ participants|length }}人)
+            </span>
+        </h2>
 
-                        {{ event.title }}
+        <div class="participant-list">
+            {% for p in participants %}
+            <div class="participant-badge">
+                <span>👤</span>
+                <span>{{ p }}</span>
+            </div>
+            {% else %}
+            <p>まだ参加者はいません。</p>
+            {% endfor %}
+        </div>
 
-                        <span class="status-badge">
+        <p class="note-text">
+            ※「参加する」を選択したユーザーのみ表示
+        </p>
 
-                            {% if event.is_active %}
-                            募集中
-                            {% else %}
-                            終了
-                            {% endif %}
+    </section>
 
-                        </span>
+    <!-- 投票結果 -->
 
-                    </h1>
+    <div class="voting-results-grid">
 
-                    <p class="result-subtitle">
-                        みんなの投票結果を確認しましょう
-                    </p>
+        {% for title, icon, results in [
+            ("場所の投票結果", "📍", place_results),
+            ("日程の投票結果", "📅", date_results),
+            ("時間の投票結果", "🕒", time_results)
+        ] %}
 
+        <section class="result-card">
+
+            <div class="result-card-header">
+                <span>{{ icon }}</span>
+                <h3 class="result-card-title">{{ title }}</h3>
+            </div>
+
+            {% set max_count = results[0][1] if results else 1 %}
+
+            {% for name, count in results %}
+
+            <div class="vote-bar-item">
+
+                <div class="vote-bar-top">
+                    <span>{{ name }}</span>
+                    <span>{{ count }}票</span>
+                </div>
+
+                <div class="vote-bar-bg">
+                    <div class="vote-bar-fill"
+                         style="width: {{ (count / max_count * 100)|round }}%;">
+                    </div>
                 </div>
 
             </div>
+
+            {% else %}
+                <p>まだ投票がありません。</p>
+            {% endfor %}
+
+            <p class="note-text">※複数選択可</p>
 
         </section>
 
-        {% if voted %}
-        <div class="success-notice">
-            ✅ 投票が送信されました
+        {% endfor %}
+
+    </div>
+
+    <!-- おすすめプラン -->
+
+    <section class="recommended-plan-card">
+
+        <div class="recommended-header">
+            <span>⭐</span>
+            <h2 class="section-title">おすすめプラン</h2>
         </div>
-        {% endif %}
-        <!-- 参加者 -->
-        <section class="result-section">
 
-            <div class="section-header-flex">
+        {% if event.final_place and event.final_date and event.final_time %}
 
-                <div class="section-title-group-flex">
+            <p class="recommend-description">
+                主催者によって最終決定されたプランです。
+            </p>
 
-                    <span class="section-icon">
-                        👥
-                    </span>
-
-                    <h2 class="section-title">
-                        参加者一覧
-                        <span class="participant-count">
-                            ({{ participants|length }}人)
-                        </span>
-                    </h2>
-
+            <div class="final-plan">
+                <div class="final-plan-title">
+                    👑 最終決定プラン
                 </div>
 
+                <div class="plan-combination">
+                    <span class="plan-item">{{ event.final_place }}</span>
+                    <span class="plan-cross">×</span>
+                    <span class="plan-item">{{ event.final_date }}</span>
+                    <span class="plan-cross">×</span>
+                    <span class="plan-item">{{ event.final_time }}</span>
+                </div>
+
+                <p class="plan-votes">
+                    {{ event.final_votes or 0 }}票
+                </p>
             </div>
 
+        {% elif recommended_plans %}
 
-            <div class="participant-list">
+            <p class="recommend-description">
+                投票結果から最も多く支持された組み合わせです。
+                {% if event.is_active and is_host %}
+                    確定するプランを選択してください。
+                {% elif event.is_active %}
+                    主催者が最終決定します。
+                {% else %}
+                    自動締切となったため、こちらは集計上のおすすめです。
+                {% endif %}
+            </p>
 
-                {% for p in participants %}
+            {% if event.is_active and is_host %}
+            <form method="POST" action="{{ url_for('complete') }}"
+                  id="completeForm">
+            {% endif %}
 
-                <div class="participant-badge">
+                {% for plan in recommended_plans %}
 
-                    <span class="user-icon">
-                        👤
+                <label class="plan-option"
+                    {% if event.is_active and is_host %}
+                    data-place="{{ plan.place }}"
+                    data-date="{{ plan.date }}"
+                    data-time="{{ plan.time }}"
+                    {% endif %}>
+
+                    {% if event.is_active and is_host %}
+                    <input type="radio"
+                           name="plan_choice"
+                           value="{{ loop.index0 }}"
+                           {% if loop.first %}checked{% endif %}>
+                    {% endif %}
+
+                    <div class="plan-option-content">
+
+                        <div class="plan-label">
+                            ⭐ おすすめプラン
+                        </div>
+
+                        <div class="plan-combination">
+                            <span class="plan-item">{{ plan.place }}</span>
+                            <span class="plan-cross">×</span>
+                            <span class="plan-item">{{ plan.date }}</span>
+                            <span class="plan-cross">×</span>
+                            <span class="plan-item">{{ plan.time }}</span>
+                        </div>
+
+                    </div>
+
+                    <span class="plan-votes">
+                        {{ plan.votes }}票
                     </span>
 
-                    <span class="participant-name">
-                        {{ p }}
-                    </span>
-
-                </div>
+                </label>
 
                 {% endfor %}
 
-            </div>
+                {% if event.is_active and is_host %}
+                <input type="hidden" name="final_place" id="finalPlace">
+                <input type="hidden" name="final_date" id="finalDate">
+                <input type="hidden" name="final_time" id="finalTime">
+            </form>
+                {% endif %}
 
-            <p class="note-text">
-                ※「参加する」を選択したユーザーのみ表示
-            </p>
+        {% else %}
 
-        </section>
+            <p>おすすめプランを作成できるだけの投票がありません。</p>
 
+        {% endif %}
 
-        <!-- 投票結果 -->
-        <div class="voting-results-grid">
+    </section>
 
-            <!-- 場所 -->
-            <section class="result-card">
+    <!-- 戻るボタン -->
 
-                <div class="result-card-header">
+    <div class="bottom-actions-grid">
 
-                    <span class="section-icon">📍</span>
+        {% if event.is_active %}
+        <a href="{{ url_for('event') }}" class="back-button">
+            投票画面へ戻る
+        </a>
+        {% else %}
+        <a href="{{ url_for('index') }}" class="back-button">
+            トップ画面へ戻る
+        </a>
+        {% endif %}
 
-                    <h3 class="result-card-title">
-                        場所の投票結果
-                    </h3>
+    </div>
 
-                </div>
+</main>
 
-                {% set max_place =
-                (place_results | map(attribute=1) | max)
-                if place_results else 1 %}
+<!-- 主催者専用メニュー -->
 
-                <div class="vote-bars">
+{% if event.is_active and is_host and recommended_plans %}
 
-                    {% for place, count in place_results %}
+<div class="host-menu">
 
-                    <div class="vote-bar-item">
+    <h3>👑 主催者メニュー</h3>
 
-                        <div class="vote-bar-top">
-                            <span>{{ place }}</span>
-                            <span>{{ count }}票</span>
-                        </div>
+    <button type="submit"
+            form="completeForm"
+            class="host-complete-button"
+            onclick="return confirm('このプランで確定してイベントを終了しますか？');">
+        👑 完了（締め切り）する
+    </button>
 
-                        <div class="vote-bar-bg">
+    <p class="host-menu-note">
+        選択したプランを確定してイベントを終了します
+    </p>
 
-                            <div class="vote-bar-fill" style="width: {{ (count / max_place * 100)|round }}%;">
+</div>
 
-                            </div>
+{% endif %}
 
-                        </div>
+<script>
+    // 選択されたおすすめプランを送信する
+    const completeForm = document.getElementById("completeForm");
 
-                    </div>
+    if (completeForm) {
 
-                    {% endfor %}
+        function updateSelectedPlan() {
 
-                </div>
+            const selected = completeForm.querySelector(
+                'input[name="plan_choice"]:checked'
+            );
 
-                <p class="note-text">
-                    ※複数選択可
-                </p>
+            if (!selected) return;
 
-            </section>
+            const option = selected.closest(".plan-option");
 
+            document.getElementById("finalPlace").value =
+                option.dataset.place;
 
-            <!-- 日程 -->
-            <section class="result-card">
+            document.getElementById("finalDate").value =
+                option.dataset.date;
 
-                <div class="result-card-header">
+            document.getElementById("finalTime").value =
+                option.dataset.time;
+        }
 
-                    <span class="section-icon">📅</span>
+        completeForm.querySelectorAll(
+            'input[name="plan_choice"]'
+        ).forEach(input => {
+            input.addEventListener("change", updateSelectedPlan);
+        });
 
-                    <h3 class="result-card-title">
-                        日程の投票結果
-                    </h3>
+        updateSelectedPlan();
+    }
 
-                </div>
+    // 残り時間のカウントダウン
+    const countdown = document.getElementById("countdown");
 
-                {% set max_date =
-                (date_results | map(attribute=1) | max)
-                if date_results else 1 %}
+    if (countdown && countdown.dataset.seconds) {
 
-                <div class="vote-bars">
+        let remaining = Number(countdown.dataset.seconds);
 
-                    {% for date, count in date_results %}
+        if (remaining > 0) {
 
-                    <div class="vote-bar-item">
+            setInterval(() => {
 
-                        <div class="vote-bar-top">
-                            <span>{{ date }}</span>
-                            <span>{{ count }}票</span>
-                        </div>
+                remaining = Math.max(0, remaining - 1);
 
-                        <div class="vote-bar-bg">
+                const hours = Math.floor(remaining / 3600);
+                const minutes = Math.floor((remaining % 3600) / 60);
+                const seconds = remaining % 60;
 
-                            <div class="vote-bar-fill" style="width: {{ (count / max_date * 100)|round }}%;">
+                countdown.textContent =
+                    `${hours}時間 ${minutes}分 ${seconds}秒`;
 
-                            </div>
+                if (remaining === 0) {
+                    location.reload();
+                }
 
-                        </div>
-
-                    </div>
-
-                    {% endfor %}
-
-                </div>
-
-                <p class="note-text">
-                    ※複数選択可
-                </p>
-
-            </section>
-
-
-            <!-- 時間 -->
-            <section class="result-card">
-
-                <div class="result-card-header">
-
-                    <span class="section-icon">🕐</span>
-
-                    <h3 class="result-card-title">
-                        時間の投票結果
-                    </h3>
-
-                </div>
-
-                {% set max_time =
-                (time_results | map(attribute=1) | max)
-                if time_results else 1 %}
-
-                <div class="vote-bars">
-
-                    {% for time, count in time_results %}
-
-                    <div class="vote-bar-item">
-
-                        <div class="vote-bar-top">
-                            <span>{{ time }}</span>
-                            <span>{{ count }}票</span>
-                        </div>
-
-                        <div class="vote-bar-bg">
-
-                            <div class="vote-bar-fill" style="width: {{ (count / max_time * 100)|round }}%;">
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                    {% endfor %}
-
-                </div>
-
-                <p class="note-text">
-                    ※複数選択可
-                </p>
-
-            </section>
-
-        </div>
-
-
-        <!-- 集計状況 -->
-        <section class="recommended-plan-card">
-
-            <div class="recommended-header">
-
-                <span class="section-icon">
-                    ⭐
-                </span>
-
-                <h2 class="section-title">
-                    集計状況
-                </h2>
-
-            </div>
-
-            <div class="plan-combination">
-
-                <div class="plan-item">
-                    参加者 {{ participants|length }}人
-                </div>
-
-            </div>
-
-        </section>
-
-
-        <!-- ボタン -->
-        <div class="bottom-actions-grid">
-
-            <a href="{{ url_for('event') }}" class="btn-submit">
-
-                投票画面へ戻る
-
-            </a>
-
-            {% if event.is_active and username == host_name %}
-
-            <a href="{{ url_for('complete') }}" class="btn-submit">
-
-                👑 完了（締め切り）
-
-            </a>
-
-            {% endif %}
-
-        </div>
-
-    </main>
-
-
-    <footer class="footer">
-
-        <p class="copyright">
-            © 2024 Nomikai Adjustment Tool
-        </p>
-
-    </footer>
+            }, 1000);
+        }
+    }
+</script>
 
 </body>
-
 </html>

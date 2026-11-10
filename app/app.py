@@ -6,6 +6,7 @@ import hashlib
 from collections import Counter
 from datetime import datetime, timedelta
 from pathlib import Path
+from itertools import product
 
 app = Flask(__name__)
 app.secret_key = "nomitomo-secret-2026"
@@ -142,6 +143,18 @@ def init_db():
     except sqlite3.OperationalError:
         pass
 
+    for column in [
+        "final_place TEXT",
+        "final_time TEXT",
+        "final_votes INTEGER DEFAULT 0"
+    ]:
+        try:
+            conn.execute(
+                f"ALTER TABLE events ADD COLUMN {column}"
+            )
+        except sqlite3.OperationalError:
+            pass
+
     conn.commit()
     conn.close()
 
@@ -215,6 +228,67 @@ def get_event_summary_text(conn, event_id):
     )
 
     return summary_text, list(set(participant_emails))
+
+def get_recommended_plans(votes):
+    """
+    参加するユーザーの投票から
+    場所・日程・時間の組み合わせを集計する。
+    """
+
+    combination_counter = Counter()
+
+    for vote in votes:
+
+        if not vote["is_join"]:
+            continue
+
+        places = [
+            p.strip()
+            for p in (vote["place"] or "").split(",")
+            if p.strip()
+        ]
+
+        dates = [
+            d.strip()
+            for d in (vote["date"] or "").split(",")
+            if d.strip()
+        ]
+
+        times = [
+            t.strip()
+            for t in (vote["time_slot"] or "").split(",")
+            if t.strip()
+        ]
+
+        if not places or not dates or not times:
+            continue
+
+        # 1人の投票から選択可能な組み合わせを作る
+        combinations = set(product(places, dates, times))
+
+        for combination in combinations:
+            combination_counter[combination] += 1
+
+    if not combination_counter:
+        return []
+
+    max_votes = max(combination_counter.values())
+
+    # 最多得票の組み合わせをすべて取得
+    recommended = []
+
+    for (place, date, time_slot), count in combination_counter.items():
+
+        if count == max_votes:
+
+            recommended.append({
+                "place": place,
+                "date": date,
+                "time": time_slot,
+                "votes": count
+            })
+
+    return recommended
 
 
 # ==========================
@@ -870,106 +944,106 @@ def result():
 
     conn = get_db()
 
-    event = conn.execute(
-        """
-        SELECT
-            events.*,
-            users.username AS host_name
-        FROM events
-        JOIN users
-        ON events.host_user_id = users.id
-        WHERE events.is_active = 1
-        ORDER BY events.id DESC
-        LIMIT 1
-        """
-    ).fetchone()
+    try:
+        # 募集中のイベントを優先し、なければ直近の終了イベントを取得
+        event = conn.execute("""
+            SELECT
+                events.*,
+                users.username AS host_name
+            FROM events
+            JOIN users ON events.host_user_id = users.id
+            ORDER BY events.is_active DESC, events.id DESC
+            LIMIT 1
+        """).fetchone()
 
-    if event is None:
+        if event is None:
+            return redirect(url_for("index"))
 
+        votes = conn.execute("""
+            SELECT votes.*, users.username
+            FROM votes
+            JOIN users ON votes.user_id = users.id
+            WHERE votes.event_id = ?
+        """, (event["id"],)).fetchall()
+
+        participants = []
+
+        place_counter = Counter()
+        date_counter = Counter()
+        time_counter = Counter()
+
+        for vote in votes:
+
+            # 参加者のみ集計
+            if vote["is_join"]:
+
+                participants.append(vote["username"])
+
+                for p in (vote["place"] or "").split(","):
+                    if p.strip():
+                        place_counter[p.strip()] += 1
+
+                for d in (vote["date"] or "").split(","):
+                    if d.strip():
+                        date_counter[d.strip()] += 1
+
+                for t in (vote["time_slot"] or "").split(","):
+                    if t.strip():
+                        time_counter[t.strip()] += 1
+
+        # おすすめプラン
+        recommended_plans = get_recommended_plans(votes)
+
+        # 作成日時と締切時間
+        created = datetime.strptime(
+            event["created_at"],
+            "%Y-%m-%d %H:%M:%S"
+        )
+
+        end_time = created + timedelta(hours=24)
+
+        remain = end_time - datetime.now()
+
+        if remain.total_seconds() < 0:
+            remain = timedelta(0)
+
+        total_seconds = int(remain.total_seconds())
+
+        hours = total_seconds // 3600
+        minutes = (total_seconds % 3600) // 60
+        seconds = total_seconds % 60
+
+        is_host = (
+            session["username"] == event["host_name"]
+        )
+
+        return render_template(
+            "result.html",
+            username=session["username"],
+            event=event,
+            host_name=event["host_name"],
+            participants=participants,
+            place_results=place_counter.most_common(),
+            date_results=date_counter.most_common(),
+            time_results=time_counter.most_common(),
+            recommended_plans=recommended_plans,
+            is_host=is_host,
+            voted=request.args.get("voted"),
+            remain_hours=hours,
+            remain_minutes=minutes,
+            remain_seconds=seconds,
+            created_at=created.strftime("%Y/%m/%d %H:%M")
+        )
+
+    finally:
         conn.close()
-
-        return redirect(url_for("index"))
-
-    votes = conn.execute(
-        """
-        SELECT
-            votes.*,
-            users.username
-        FROM votes
-        JOIN users
-        ON votes.user_id = users.id
-        WHERE votes.event_id = ?
-        """,
-        (event["id"],)
-    ).fetchall()
-
-    participants = []
-
-    place_counter = Counter()
-    date_counter = Counter()
-    time_counter = Counter()
-
-    for vote in votes:
-
-        if vote["is_join"]:
-            participants.append(vote["username"])
-
-        if vote["place"]:
-            for p in vote["place"].split(","):
-                if p:
-                    place_counter[p] += 1
-
-        if vote["date"]:
-            for d in vote["date"].split(","):
-                if d:
-                    date_counter[d] += 1
-
-        if vote["time_slot"]:
-            for t in vote["time_slot"].split(","):
-                if t:
-                    time_counter[t] += 1
-
-    created = datetime.strptime(
-        event["created_at"],
-        "%Y-%m-%d %H:%M:%S"
-    )
-
-    end_time = created + timedelta(hours=24)
-
-    remain = end_time - datetime.now()
-
-    if remain.total_seconds() < 0:
-        remain = timedelta(seconds=0)
-
-    hours = remain.seconds // 3600
-    minutes = (remain.seconds % 3600) // 60
-
-    is_host = (
-        session["username"] ==
-        event["host_name"]
-    )
-
-    conn.close()
-
-    return render_template(
-        "result.html",
-        username=session["username"],
-        event=event,
-        host_name=event["host_name"],
-        participants=participants,
-        place_results=place_counter.items(),
-        date_results=date_counter.items(),
-        time_results=time_counter.items(),
-        voted=request.args.get("voted"),
-        is_host=is_host
-    )
 
 
 # ==========================
 # COMPLETE (手動終了)
 # ==========================
 
-@app.route("/complete")
+@app.route("/complete", methods=["POST"])
 def complete():
 
     if not login_required():
@@ -977,71 +1051,107 @@ def complete():
 
     conn = get_db()
 
-    event = conn.execute(
-        """
-        SELECT
-            events.*,
-            users.username AS host_name
-        FROM events
-        JOIN users
-        ON events.host_user_id = users.id
-        WHERE is_active=1
-        LIMIT 1
-        """
-    ).fetchone()
+    try:
+        event = conn.execute("""
+            SELECT events.*, users.username AS host_name
+            FROM events
+            JOIN users ON events.host_user_id = users.id
+            WHERE events.is_active = 1
+            ORDER BY events.id DESC
+            LIMIT 1
+        """).fetchone()
 
-    if event is None:
+        if event is None:
+            flash("募集中のイベントがありません")
+            return redirect(url_for("index"))
 
-        conn.close()
+        # 主催者チェック
+        if event["host_name"] != session["username"]:
+            flash("主催者のみイベントを終了できます")
+            return redirect(url_for("result"))
 
-        return redirect(url_for("index"))
+        # 最新の投票情報からおすすめを再計算
+        votes = conn.execute("""
+            SELECT *
+            FROM votes
+            WHERE event_id = ?
+        """, (event["id"],)).fetchall()
 
-    if event["host_name"] != session["username"]:
+        recommended_plans = get_recommended_plans(votes)
 
-        conn.close()
+        selected_place = request.form.get("final_place", "")
+        selected_date = request.form.get("final_date", "")
+        selected_time = request.form.get("final_time", "")
 
-        flash("主催者のみ終了できます")
+        # 送信されたプランが実際の集計結果に存在するか確認
+        selected_plan = next(
+            (
+                p for p in recommended_plans
+                if p["place"] == selected_place
+                and p["date"] == selected_date
+                and p["time"] == selected_time
+            ),
+            None
+        )
+
+        if selected_plan is None:
+            flash("有効なおすすめプランを選択してください")
+            return redirect(url_for("result"))
+
+        # 結果を保存してイベントを終了
+        conn.execute("""
+            UPDATE events
+            SET
+                is_active = 0,
+                finished_at = CURRENT_TIMESTAMP,
+                final_place = ?,
+                final_date = ?,
+                final_time = ?,
+                final_votes = ?
+            WHERE id = ?
+        """, (
+            selected_place,
+            selected_date,
+            selected_time,
+            selected_plan["votes"],
+            event["id"]
+        ))
+
+        conn.commit()
+
+        # 既存のメール通知処理を維持
+        summary_text, emails = get_event_summary_text(
+            conn, event["id"]
+        )
+
+        if emails:
+            try:
+                msg = Message(
+                    subject=f"【決定】飲み会「{event['title']}」の日程・詳細が決まったよ！",
+                    bcc=emails,
+                    body=(
+                        f"「{event['title']}」の募集が終了しました！\n\n"
+                        f"【最終決定プラン】\n"
+                        f"場所：{selected_place}\n"
+                        f"日程：{selected_date}\n"
+                        f"時間：{selected_time}\n"
+                        f"得票数：{selected_plan['votes']}票\n\n"
+                        f"【投票集計】\n{summary_text}"
+                    )
+                )
+                mail.send(msg)
+                flash("イベントを終了し、確定結果を保存しました。通知メールも送信しました。")
+
+            except Exception:
+                app.logger.exception("イベント終了通知メール送信エラー")
+                flash("イベントを終了し、確定結果を保存しました。メール送信には失敗しました。")
+        else:
+            flash("イベントを終了し、確定結果を保存しました。")
 
         return redirect(url_for("result"))
 
-    summary_text, emails = get_event_summary_text(conn, event["id"])
-
-    conn.execute(
-        """
-        UPDATE events
-        SET
-            is_active=0,
-            finished_at=CURRENT_TIMESTAMP
-        WHERE id=?
-        """,
-        (event["id"],)
-    )
-
-    conn.commit()
-    conn.close()
-
-    if emails:
-        try:
-            msg = Message(
-                subject=f"【決定】飲み会「{event['title']}」の日程・詳細が決まったよ！",
-                bcc=emails,  # ★ BCCに変更
-                body=(
-                    f"「{event['title']}」の募集が主催者によって締め切られたよ！\n"
-                    f"みんなの希望を集計した結果はこちら👇\n\n"
-                    f"{summary_text}\n\n"
-                    f"アプリで詳細を確認してね👇\n"
-                    f"http://127.0.0.1:5000/"
-                )
-            )
-            mail.send(msg)
-            flash("イベントを終了し、参加者に通知メールを送信しました")
-        except Exception as e:
-            app.logger.error(f"イベント終了通知メール送信エラー: {e}")
-            flash("イベントを終了しましたが、メール送信に失敗しました")
-    else:
-        flash("イベントを終了しました")
-
-    return redirect(url_for("index"))
+    finally:
+        conn.close()
 
 
 # ==========================
