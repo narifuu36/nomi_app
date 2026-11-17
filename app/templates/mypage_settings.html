@@ -1,0 +1,283 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>通知設定 - のみとも</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <style>
+        .settings-container {
+            max-width: 760px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .settings-title {
+            font-size: 26px;
+            margin-bottom: 8px;
+        }
+
+        .settings-description {
+            color: #777;
+            margin-bottom: 30px;
+        }
+
+        .settings-card {
+            background: #fff;
+            border-radius: 14px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.06);
+        }
+
+        .settings-card-title {
+            font-size: 19px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            padding: 17px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .setting-item:last-child {
+            border-bottom: none;
+        }
+
+        .setting-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .setting-detail {
+            font-size: 13px;
+            color: #888;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 28px;
+            flex-shrink: 0;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .switch-slider {
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+            background-color: #ccc;
+            border-radius: 30px;
+            transition: 0.25s;
+        }
+
+        .switch-slider::before {
+            content: "";
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.25s;
+        }
+
+        .switch input:checked + .switch-slider {
+            background-color: #f39832;
+        }
+
+        .switch input:checked + .switch-slider::before {
+            transform: translateX(22px);
+        }
+
+        .back-button {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #666;
+            text-decoration: none;
+        }
+
+        .settings-notice {
+            font-size: 12px;
+            color: #999;
+            text-align: center;
+            margin-top: 25px;
+        }
+
+        @media (max-width: 600px) {
+            .settings-card {
+                padding: 18px;
+            }
+
+            .settings-title {
+                font-size: 22px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header class="header">
+    <div class="header-logo">
+        <span class="beer-icon">🍻</span>
+        <span class="header-title">のみとも</span>
+    </div>
+
+    <div class="header-user dropdown">
+        <span class="user-icon">👤</span>
+        <span class="user-name">{{ username }}</span>
+        <span class="dropdown-arrow">▼</span>
+
+        <div class="dropdown-menu">
+            <a href="{{ url_for('mypage_settings') }}">
+                マイページ・通知設定
+            </a>
+            <a href="{{ url_for('billing_history') }}">
+                会計履歴を確認
+            </a>
+            <a href="{{ url_for('logout') }}">
+                ログアウト
+            </a>
+        </div>
+    </div>
+</header>
+
+<main class="settings-container">
+
+    <a href="{{ url_for('index') }}" class="back-button">
+        ← トップページに戻る
+    </a>
+
+    <h1 class="settings-title">⚙️ 通知設定</h1>
+    <p class="settings-description">
+        受け取りたい通知を自由に設定できます。
+    </p>
+
+    <!-- メール通知 -->
+    <section class="settings-card">
+        <h2 class="settings-card-title">📧 メール通知</h2>
+
+        <div class="setting-item">
+            <div>
+                <div class="setting-name">イベント作成・変更通知</div>
+                <div class="setting-detail">
+                    飲み会イベントの作成や変更をお知らせします。
+                </div>
+            </div>
+            <label class="switch">
+                <input type="checkbox" checked>
+                <span class="switch-slider"></span>
+            </label>
+        </div>
+
+        <div class="setting-item">
+            <div>
+                <div class="setting-name">イベント確定通知</div>
+                <div class="setting-detail">
+                    開催日時や場所が確定した際にお知らせします。
+                </div>
+            </div>
+            <label class="switch">
+                <input type="checkbox" checked>
+                <span class="switch-slider"></span>
+            </label>
+        </div>
+
+        <div class="setting-item">
+            <div>
+                <div class="setting-name">リマインド通知</div>
+                <div class="setting-detail">
+                    開催前日・当日にリマインドを送信します。
+                </div>
+            </div>
+            <label class="switch">
+                <input type="checkbox" checked>
+                <span class="switch-slider"></span>
+            </label>
+        </div>
+    </section>
+
+    <!-- LINE通知 -->
+    <section class="settings-card">
+        <h2 class="settings-card-title">💬 LINE通知設定</h2>
+
+        <div class="setting-item">
+            <div>
+                <div class="setting-name">LINE通知</div>
+                <div class="setting-detail">
+                    LINE公式アカウントから通知を受け取ります。
+                </div>
+            </div>
+            <label class="switch">
+                <input type="checkbox">
+                <span class="switch-slider"></span>
+            </label>
+        </div>
+
+        <div class="setting-item">
+            <div>
+                <div class="setting-name">イベント確定通知</div>
+                <div class="setting-detail">
+                    イベントの開催日時・場所の確定をお知らせします。
+                </div>
+            </div>
+            <label class="switch">
+                <input type="checkbox" checked>
+                <span class="switch-slider"></span>
+            </label>
+        </div>
+
+        <div class="setting-item">
+            <div>
+                <div class="setting-name">開催リマインド通知</div>
+                <div class="setting-detail">
+                    開催前日・当日にLINEでお知らせします。
+                </div>
+            </div>
+            <label class="switch">
+                <input type="checkbox" checked>
+                <span class="switch-slider"></span>
+            </label>
+        </div>
+
+        <div class="setting-item">
+            <div>
+                <div class="setting-name">未回答者へのリマインド</div>
+                <div class="setting-detail">
+                    投票が未回答の場合にお知らせします。
+                </div>
+            </div>
+            <label class="switch">
+                <input type="checkbox">
+                <span class="switch-slider"></span>
+            </label>
+        </div>
+    </section>
+
+    <p class="settings-notice">
+        ※現在はデザイン確認用です。設定内容は保存されません。
+    </p>
+
+</main>
+
+<footer class="footer">
+    <p class="copyright">© 2024 Nomikai Adjustment Tool</p>
+</footer>
+
+</body>
+</html>
