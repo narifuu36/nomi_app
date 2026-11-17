@@ -7,6 +7,14 @@ from collections import Counter
 from datetime import datetime, timedelta
 from pathlib import Path
 from itertools import product
+import os
+from dotenv import load_dotenv
+import secrets
+
+load_dotenv()
+
+LINE_CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET")
+LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
 
 app = Flask(__name__)
 app.secret_key = "nomitomo-secret-2026"
@@ -16,7 +24,7 @@ app.secret_key = "nomitomo-secret-2026"
 # ==========================
 BASE_DIR = Path(__file__).resolve().parent
 DB_NAME = str(BASE_DIR / "nomikai.db")
-HOTPEPPER_API_KEY = "50476680ea3687f7"
+HOTPEPPER_API_KEY = os.getenv("HOTPEPPER_API_KEY")
 
 # ==========================
 # メール送信設定 (Gmail SMTP)
@@ -24,9 +32,13 @@ HOTPEPPER_API_KEY = "50476680ea3687f7"
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'nomitomo.service@gmail.com'
-app.config['MAIL_PASSWORD'] = 'svioicmeomsyvrqn'
-app.config['MAIL_DEFAULT_SENDER'] = ('のみとも', 'nomitomo.service@gmail.com')
+
+app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
+app.config['MAIL_DEFAULT_SENDER'] = (
+    'のみとも',
+    os.getenv('MAIL_USERNAME')
+)
 
 mail = Mail(app)
 
@@ -128,6 +140,25 @@ def init_db():
         discount_enabled INTEGER NOT NULL DEFAULT 0
     )
     ''')
+    # LINEアカウント連携テーブル
+    conn.execute("""
+    CREATE TABLE IF NOT EXISTS line_accounts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER UNIQUE NOT NULL,
+        line_user_id TEXT UNIQUE NOT NULL,
+        linked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+    # LINE連携コードテーブル
+    conn.execute("""
+    CREATE TABLE IF NOT EXISTS line_link_codes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        code TEXT UNIQUE NOT NULL,
+        expires_at TEXT NOT NULL
+    )
+    """)
 
     # カラム追加（既存DB用）
     try:
@@ -1121,6 +1152,39 @@ def complete():
 
         conn.commit()
 
+
+        # LINE通知（参加すると回答したユーザーのみ）
+        line_users = conn.execute("""
+            SELECT DISTINCT line_accounts.line_user_id
+            FROM votes
+            JOIN line_accounts
+                ON votes.user_id = line_accounts.user_id
+            WHERE votes.event_id = ?
+              AND votes.is_join = 1
+        """, (event["id"],)).fetchall()
+
+        line_message = (
+            f"【イベントの最終決定】\n"
+            f"「{event['title']}」の開催内容が決まりました！\n\n"
+            f"場所：{selected_place}\n"
+            f"日程：{selected_date}\n"
+            f"時間：{selected_time}\n\n"
+            f"ぜひ当日よろしくお願いします！"
+        )
+
+        line_success = 0
+
+        for line_user in line_users:
+            if line_push(line_user["line_user_id"], line_message):
+                line_success += 1
+
+        app.logger.info(
+            "LINE通知結果：対象%d人、送信成功%d人",
+            len(line_users),
+            line_success
+        )
+
+
         # 既存のメール通知処理を維持
         summary_text, emails = get_event_summary_text(
             conn, event["id"]
@@ -1612,10 +1676,103 @@ def mypage_settings():
     if not login_required():
         return redirect(url_for("login"))
 
+    conn = get_db()
+
+    user = conn.execute(
+        "SELECT id FROM users WHERE username = ?",
+        (session["username"],)
+    ).fetchone()
+
+    linked = conn.execute(
+        "SELECT 1 FROM line_accounts WHERE user_id = ?",
+        (user["id"],)
+    ).fetchone()
+
+    conn.close()
+
     return render_template(
         "mypage_settings.html",
-        username=session["username"]
+        username=session["username"],
+        line_linked=bool(linked),
+        line_code=None,
+        line_code_expires=None
     )
+
+@app.route("/mypage/line/link", methods=["POST"])
+def line_link():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    conn = get_db()
+
+    try:
+        # ログイン中のユーザーIDを取得
+        user = conn.execute(
+            "SELECT id FROM users WHERE username = ?",
+            (session["username"],)
+        ).fetchone()
+
+        if user is None:
+            flash("ユーザー情報を取得できませんでした。")
+            return redirect(url_for("mypage_settings"))
+
+        user_id = user["id"]
+
+        # すでにLINE連携済みか確認
+        linked = conn.execute(
+            "SELECT 1 FROM line_accounts WHERE user_id = ?",
+            (user_id,)
+        ).fetchone()
+
+        if linked:
+            flash("このアカウントはすでにLINE連携済みです。")
+            return redirect(url_for("mypage_settings"))
+
+        # 古い連携コードを削除
+        conn.execute(
+            "DELETE FROM line_link_codes WHERE user_id = ?",
+            (user_id,)
+        )
+
+        # 8文字のランダムな連携コードを発行
+        code = secrets.token_hex(4).upper()
+
+        # 有効期限は10分
+        expires_at = datetime.now() + timedelta(minutes=10)
+
+        conn.execute(
+            """
+            INSERT INTO line_link_codes
+            (user_id, code, expires_at)
+            VALUES (?, ?, ?)
+            """,
+            (
+                user_id,
+                code,
+                expires_at.isoformat()
+            )
+        )
+
+        conn.commit()
+
+        return render_template(
+            "mypage_settings.html",
+            username=session["username"],
+            line_linked=False,
+            line_code=code,
+            line_code_expires=expires_at.strftime("%H:%M")
+        )
+
+    except Exception:
+        conn.rollback()
+        app.logger.exception("LINE連携コードの発行に失敗しました")
+        flash("LINE連携コードの発行に失敗しました。")
+        return redirect(url_for("mypage_settings"))
+
+    finally:
+        conn.close()    
+
+
 
 
 # ==========================
@@ -1659,7 +1816,273 @@ def logout():
 
     return redirect(url_for("login"))
 
+def line_reply(reply_token, message):
 
+    if not LINE_CHANNEL_ACCESS_TOKEN:
+        app.logger.error("LINE_CHANNEL_ACCESS_TOKENが未設定です")
+        return
+
+    url = "https://api.line.me/v2/bot/message/reply"
+
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {LINE_CHANNEL_ACCESS_TOKEN}"
+    }
+
+    payload = {
+        "replyToken": reply_token,
+        "messages": [
+            {
+                "type": "text",
+                "text": message
+            }
+        ]
+    }
+
+    response = requests.post(
+        url,
+        headers=headers,
+        json=payload,
+        timeout=10
+    )
+
+    if response.status_code != 200:
+        app.logger.error(
+            "LINE返信エラー: status=%s body=%s",
+            response.status_code,
+            response.text
+        )
+
+# ==========================
+# LINE Webhook
+# ==========================
+
+import hmac
+import base64
+
+def line_reply(reply_token, message):
+    """LINEに自動返信する"""
+    if not LINE_CHANNEL_ACCESS_TOKEN:
+        app.logger.error("LINE_CHANNEL_ACCESS_TOKENが設定されていません")
+        return
+
+    try:
+        response = requests.post(
+            "https://api.line.me/v2/bot/message/reply",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {LINE_CHANNEL_ACCESS_TOKEN}"
+            },
+            json={
+                "replyToken": reply_token,
+                "messages": [
+                    {
+                        "type": "text",
+                        "text": message
+                    }
+                ]
+            },
+            timeout=10
+        )
+
+        if response.status_code != 200:
+            app.logger.error(
+                "LINE返信エラー: %s %s",
+                response.status_code,
+                response.text
+            )
+
+    except requests.RequestException:
+        app.logger.exception("LINE返信通信エラー")
+
+
+def line_push(line_user_id, message):
+    """指定したLINEユーザーにプッシュ通知を送信する"""
+
+    if not LINE_CHANNEL_ACCESS_TOKEN:
+        app.logger.error("LINE_CHANNEL_ACCESS_TOKENが設定されていません")
+        return False
+
+    try:
+        response = requests.post(
+            "https://api.line.me/v2/bot/message/push",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {LINE_CHANNEL_ACCESS_TOKEN}"
+            },
+            json={
+                "to": line_user_id,
+                "messages": [
+                    {
+                        "type": "text",
+                        "text": message
+                    }
+                ]
+            },
+            timeout=10
+        )
+
+        if response.status_code != 200:
+            app.logger.error(
+                "LINEプッシュ通知エラー: %s %s",
+                response.status_code,
+                response.text
+            )
+            return False
+
+        return True
+
+    except requests.RequestException:
+        app.logger.exception("LINEプッシュ通知通信エラー")
+        return False
+
+
+
+@app.route("/callback", methods=["POST"])
+def line_callback():
+
+    if not LINE_CHANNEL_SECRET:
+        app.logger.error("LINE_CHANNEL_SECRETが設定されていません")
+        return "LINE設定エラー", 500
+
+    # LINE署名を検証
+    body = request.get_data()
+    signature = request.headers.get("X-Line-Signature", "")
+
+    digest = hmac.new(
+        LINE_CHANNEL_SECRET.encode("utf-8"),
+        body,
+        hashlib.sha256
+    ).digest()
+
+    expected_signature = base64.b64encode(digest).decode("utf-8")
+
+    if not hmac.compare_digest(expected_signature, signature):
+        app.logger.warning("LINE Webhookの署名検証に失敗しました")
+        return "Invalid signature", 400
+
+    data = request.get_json(silent=True) or {}
+
+    for event in data.get("events", []):
+
+        # テキストメッセージ以外は無視
+        if event.get("type") != "message":
+            continue
+
+        message_data = event.get("message", {})
+
+        if message_data.get("type") != "text":
+            continue
+
+        line_user_id = event.get("source", {}).get("userId")
+        code = message_data.get("text", "").strip().upper()
+        reply_token = event.get("replyToken")
+
+        if not line_user_id or not reply_token:
+            continue
+
+        reply_message = "連携コードが確認できませんでした。マイページから新しいコードを発行してください。"
+
+        conn = get_db()
+
+        try:
+            # すでに別のアカウントと連携されていないか確認
+            existing = conn.execute(
+                """
+                SELECT user_id
+                FROM line_accounts
+                WHERE line_user_id = ?
+                """,
+                (line_user_id,)
+            ).fetchone()
+
+            if existing:
+                reply_message = "このLINEアカウントは、すでにのみともと連携されています。"
+
+            else:
+                # コードを検索
+                link_code = conn.execute(
+                    """
+                    SELECT user_id, expires_at
+                    FROM line_link_codes
+                    WHERE code = ?
+                    """,
+                    (code,)
+                ).fetchone()
+
+                if link_code:
+
+                    expires_at = datetime.fromisoformat(
+                        link_code["expires_at"]
+                    )
+
+                    if datetime.now() <= expires_at:
+
+                        # ユーザーがすでに別のLINEと連携していないか確認
+                        user_linked = conn.execute(
+                            """
+                            SELECT 1
+                            FROM line_accounts
+                            WHERE user_id = ?
+                            """,
+                            (link_code["user_id"],)
+                        ).fetchone()
+
+                        if user_linked:
+                            reply_message = "こののみともアカウントは、すでに別のLINEアカウントと連携されています。"
+
+                        else:
+                            try:
+                                conn.execute(
+                                    """
+                                    INSERT INTO line_accounts
+                                    (user_id, line_user_id)
+                                    VALUES (?, ?)
+                                    """,
+                                    (
+                                        link_code["user_id"],
+                                        line_user_id
+                                    )
+                                )
+
+                                conn.execute(
+                                    """
+                                    DELETE FROM line_link_codes
+                                    WHERE user_id = ?
+                                    """,
+                                    (link_code["user_id"],)
+                                )
+
+                                conn.commit()
+
+                                reply_message = "LINE連携が完了しました！これから、のみともの通知をLINEで受け取れます。"
+
+                            except sqlite3.IntegrityError:
+                                conn.rollback()
+                                reply_message = "LINE連携に失敗しました。すでに連携済みの可能性があります。"
+
+                    else:
+                        # 有効期限切れのコードを削除
+                        conn.execute(
+                            "DELETE FROM line_link_codes WHERE code = ?",
+                            (code,)
+                        )
+                        conn.commit()
+
+                        reply_message = "連携コードの有効期限が切れています。マイページから再発行してください。"
+
+        except Exception:
+            conn.rollback()
+            app.logger.exception("LINEアカウント連携処理に失敗しました")
+            reply_message = "連携処理中にエラーが発生しました。もう一度お試しください。"
+
+        finally:
+            conn.close()
+
+        # DB処理が終わってからLINEに返信
+        line_reply(reply_token, reply_message)
+
+    return "OK", 200
 # ==========================
 # MAIN
 # ==========================

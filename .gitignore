@@ -1,0 +1,13 @@
+# 環境変数・秘密情報
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# SQLiteデータベース
+*.db

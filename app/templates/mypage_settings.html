@@ -215,7 +215,79 @@
     <!-- LINE通知 -->
     <section class="settings-card">
         <h2 class="settings-card-title">💬 LINE通知設定</h2>
+                <!-- LINEアカウント連携 -->
+        <div style="padding: 0 0 20px; border-bottom: 1px solid #eee; margin-bottom: 5px;">
 
+            <div style="font-weight: bold; margin-bottom: 8px;">
+                LINEアカウント連携
+            </div>
+
+            {% if line_linked %}
+                <div style="color: #16834a; font-size: 14px; font-weight: bold;">
+                    ✓ LINE連携済み
+                </div>
+                <div class="setting-detail">
+                    このアカウントでLINE通知を受け取れます。
+                </div>
+
+            {% else %}
+                <div class="setting-detail" style="margin-bottom: 15px;">
+                    LINE公式アカウントと連携すると、イベント確定や開催リマインドなどをLINEで受け取れます。
+                </div>
+
+                <form method="POST" action="{{ url_for('line_link') }}">
+                    <button type="submit"
+                        style="
+                            background: #06C755;
+                            color: white;
+                            border: none;
+                            border-radius: 8px;
+                            padding: 11px 18px;
+                            font-weight: bold;
+                            cursor: pointer;
+                        ">
+                        LINE連携コードを発行
+                    </button>
+                </form>
+
+                {% if line_code %}
+                    <div style="
+                        background: #f7f7f7;
+                        border-radius: 10px;
+                        padding: 16px;
+                        margin-top: 15px;
+                    ">
+                        <div style="font-size: 13px; color: #666;">
+                            あなたのLINE連携コード
+                        </div>
+
+                        <div style="
+                            font-size: 28px;
+                            font-weight: bold;
+                            letter-spacing: 4px;
+                            text-align: center;
+                            margin: 12px 0;
+                        ">
+                            {{ line_code }}
+                        </div>
+
+                        <div style="font-size: 13px; color: #777;">
+                            ① のみとものLINE公式アカウントを友だち追加
+                            <br>
+                            ② トーク画面で上記のコードを送信
+                            <br>
+                            ③ 自動返信が届けば連携完了です。
+                        </div>
+
+                        {% if line_code_expires %}
+                            <div style="font-size: 12px; color: #999; margin-top: 10px;">
+                                ※このコードには有効期限があります。
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            {% endif %}
+        </div>
         <div class="setting-item">
             <div>
                 <div class="setting-name">LINE通知</div>
