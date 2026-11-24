@@ -1,6 +1,6 @@
-
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -29,7 +29,7 @@
             border-radius: 14px;
             padding: 24px;
             margin-bottom: 24px;
-            box-shadow: 0 3px 12px rgba(0,0,0,0.06);
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
         }
 
         .settings-card-title {
@@ -96,11 +96,11 @@
             transition: 0.25s;
         }
 
-        .switch input:checked + .switch-slider {
+        .switch input:checked+.switch-slider {
             background-color: #f39832;
         }
 
-        .switch input:checked + .switch-slider::before {
+        .switch input:checked+.switch-slider::before {
             transform: translateX(22px);
         }
 
@@ -132,97 +132,102 @@
 
 <body>
 
-<header class="header">
-    <div class="header-logo">
-        <span class="beer-icon">🍻</span>
-        <span class="header-title">のみとも</span>
-    </div>
-
-    <div class="header-user dropdown">
-        <span class="user-icon">👤</span>
-        <span class="user-name">{{ username }}</span>
-        <span class="dropdown-arrow">▼</span>
-
-        <div class="dropdown-menu">
-            <a href="{{ url_for('mypage_settings') }}">
-                マイページ・通知設定
-            </a>
-            <a href="{{ url_for('billing_history') }}">
-                会計履歴を確認
-            </a>
-            <a href="{{ url_for('logout') }}">
-                ログアウト
-            </a>
+    <header class="header">
+        <div class="header-logo">
+            <span class="beer-icon">🍻</span>
+            <span class="header-title">のみとも</span>
         </div>
-    </div>
-</header>
 
-<main class="settings-container">
+        <div class="header-user dropdown">
+            <span class="user-icon">👤</span>
+            <span class="user-name">{{ username }}</span>
+            <span class="dropdown-arrow">▼</span>
 
-    <a href="{{ url_for('index') }}" class="back-button">
-        ← トップページに戻る
-    </a>
+            <div class="dropdown-menu">
+                <a href="{{ url_for('mypage_settings') }}">
+                    マイページ・通知設定
+                </a>
+                <a href="{{ url_for('billing_history') }}">
+                    会計履歴を確認
+                </a>
+                <a href="{{ url_for('logout') }}">
+                    ログアウト
+                </a>
+            </div>
+        </div>
+    </header>
 
-    <h1 class="settings-title">⚙️ 通知設定</h1>
-    <p class="settings-description">
-        受け取りたい通知を自由に設定できます。
-    </p>
+    <main class="settings-container">
+        <form id="notificationSettingsForm" method="POST" action="{{ url_for('save_notification_settings') }}">
+        </form>
 
-    <!-- メール通知 -->
-    <section class="settings-card">
-        <h2 class="settings-card-title">📧 メール通知</h2>
+        <a href="{{ url_for('index') }}" class="back-button">
+            ← トップページに戻る
+        </a>
 
-        <div class="setting-item">
-            <div>
-                <div class="setting-name">イベント作成・変更通知</div>
-                <div class="setting-detail">
-                    飲み会イベントの作成や変更をお知らせします。
+        <h1 class="settings-title">⚙️ 通知設定</h1>
+        <p class="settings-description">
+            受け取りたい通知を自由に設定できます。
+        </p>
+
+        <!-- メール通知 -->
+        <section class="settings-card">
+            <h2 class="settings-card-title">📧 メール通知</h2>
+
+            <div class="setting-item">
+                <div>
+                    <div class="setting-name">イベント作成・変更通知</div>
+                    <div class="setting-detail">
+                        飲み会イベントの作成や変更をお知らせします。
+                    </div>
                 </div>
+                <label class="switch">
+                    <input type="checkbox" name="email_event_changes" form="notificationSettingsForm" {% if
+                        notification_settings["email_event_changes"] %}checked{% endif %}>
+                    <span class="switch-slider"></span>
+                </label>
             </div>
-            <label class="switch">
-                <input type="checkbox" checked>
-                <span class="switch-slider"></span>
-            </label>
-        </div>
 
-        <div class="setting-item">
-            <div>
-                <div class="setting-name">イベント確定通知</div>
-                <div class="setting-detail">
-                    開催日時や場所が確定した際にお知らせします。
+            <div class="setting-item">
+                <div>
+                    <div class="setting-name">イベント確定通知</div>
+                    <div class="setting-detail">
+                        開催日時や場所が確定した際にお知らせします。
+                    </div>
                 </div>
+                <label class="switch">
+                    <input type="checkbox" name="email_event_finalized" form="notificationSettingsForm" {% if
+                        notification_settings["email_event_finalized"] %}checked{% endif %}>
+                    <span class="switch-slider"></span>
+                </label>
             </div>
-            <label class="switch">
-                <input type="checkbox" checked>
-                <span class="switch-slider"></span>
-            </label>
-        </div>
 
-        <div class="setting-item">
-            <div>
-                <div class="setting-name">リマインド通知</div>
-                <div class="setting-detail">
-                    開催前日・当日にリマインドを送信します。
+            <div class="setting-item">
+                <div>
+                    <div class="setting-name">リマインド通知</div>
+                    <div class="setting-detail">
+                        開催前日・当日にリマインドを送信します。
+                    </div>
                 </div>
+                <label class="switch">
+                    <input type="checkbox" name="email_reminders" form="notificationSettingsForm" {% if
+                        notification_settings["email_reminders"] %}checked{% endif %}>
+                    <span class="switch-slider"></span>
+                </label>
             </div>
-            <label class="switch">
-                <input type="checkbox" checked>
-                <span class="switch-slider"></span>
-            </label>
-        </div>
-    </section>
+        </section>
 
-    <!-- LINE通知 -->
-    <section class="settings-card">
-        <h2 class="settings-card-title">💬 LINE通知設定</h2>
-                <!-- LINEアカウント連携 -->
-        <div style="padding: 0 0 20px; border-bottom: 1px solid #eee; margin-bottom: 5px;">
+        <!-- LINE通知 -->
+        <section class="settings-card">
+            <h2 class="settings-card-title">💬 LINE通知設定</h2>
+            <!-- LINEアカウント連携 -->
+            <div style="padding: 0 0 20px; border-bottom: 1px solid #eee; margin-bottom: 5px;">
 
-            <div style="font-weight: bold; margin-bottom: 8px;">
-                LINEアカウント連携
-            </div>
+                <div style="font-weight: bold; margin-bottom: 8px;">
+                    LINEアカウント連携
+                </div>
 
-            {% if line_linked %}
+                {% if line_linked %}
                 <div style="color: #16834a; font-size: 14px; font-weight: bold;">
                     ✓ LINE連携済み
                 </div>
@@ -230,14 +235,13 @@
                     このアカウントでLINE通知を受け取れます。
                 </div>
 
-            {% else %}
+                {% else %}
                 <div class="setting-detail" style="margin-bottom: 15px;">
                     LINE公式アカウントと連携すると、イベント確定や開催リマインドなどをLINEで受け取れます。
                 </div>
 
                 <form method="POST" action="{{ url_for('line_link') }}">
-                    <button type="submit"
-                        style="
+                    <button type="submit" style="
                             background: #06C755;
                             color: white;
                             border: none;
@@ -251,105 +255,121 @@
                 </form>
 
                 {% if line_code %}
-                    <div style="
+                <div style="
                         background: #f7f7f7;
                         border-radius: 10px;
                         padding: 16px;
                         margin-top: 15px;
                     ">
-                        <div style="font-size: 13px; color: #666;">
-                            あなたのLINE連携コード
-                        </div>
+                    <div style="font-size: 13px; color: #666;">
+                        あなたのLINE連携コード
+                    </div>
 
-                        <div style="
+                    <div style="
                             font-size: 28px;
                             font-weight: bold;
                             letter-spacing: 4px;
                             text-align: center;
                             margin: 12px 0;
                         ">
-                            {{ line_code }}
-                        </div>
-
-                        <div style="font-size: 13px; color: #777;">
-                            ① のみとものLINE公式アカウントを友だち追加
-                            <br>
-                            ② トーク画面で上記のコードを送信
-                            <br>
-                            ③ 自動返信が届けば連携完了です。
-                        </div>
-
-                        {% if line_code_expires %}
-                            <div style="font-size: 12px; color: #999; margin-top: 10px;">
-                                ※このコードには有効期限があります。
-                            </div>
-                        {% endif %}
+                        {{ line_code }}
                     </div>
+
+                    <div style="font-size: 13px; color: #777;">
+                        ① のみとものLINE公式アカウントを友だち追加
+                        <br>
+                        ② トーク画面で上記のコードを送信
+                        <br>
+                        ③ 自動返信が届けば連携完了です。
+                    </div>
+
+                    {% if line_code_expires %}
+                    <div style="font-size: 12px; color: #999; margin-top: 10px;">
+                        ※このコードには有効期限があります。
+                    </div>
+                    {% endif %}
+                </div>
                 {% endif %}
-            {% endif %}
-        </div>
-        <div class="setting-item">
-            <div>
-                <div class="setting-name">LINE通知</div>
-                <div class="setting-detail">
-                    LINE公式アカウントから通知を受け取ります。
-                </div>
+                {% endif %}
             </div>
-            <label class="switch">
-                <input type="checkbox">
-                <span class="switch-slider"></span>
-            </label>
-        </div>
-
-        <div class="setting-item">
-            <div>
-                <div class="setting-name">イベント確定通知</div>
-                <div class="setting-detail">
-                    イベントの開催日時・場所の確定をお知らせします。
+            <div class="setting-item">
+                <div>
+                    <div class="setting-name">LINE通知</div>
+                    <div class="setting-detail">
+                        LINE公式アカウントから通知を受け取ります。
+                    </div>
                 </div>
+                <label class="switch">
+                    <input type="checkbox" name="line_enabled" form="notificationSettingsForm" {% if
+                        notification_settings["line_enabled"] %}checked{% endif %}>
+                    <span class="switch-slider"></span>
+                </label>
             </div>
-            <label class="switch">
-                <input type="checkbox" checked>
-                <span class="switch-slider"></span>
-            </label>
-        </div>
 
-        <div class="setting-item">
-            <div>
-                <div class="setting-name">開催リマインド通知</div>
-                <div class="setting-detail">
-                    開催前日・当日にLINEでお知らせします。
+            <div class="setting-item">
+                <div>
+                    <div class="setting-name">イベント確定通知</div>
+                    <div class="setting-detail">
+                        イベントの開催日時・場所の確定をお知らせします。
+                    </div>
                 </div>
+                <label class="switch">
+                    <input type="checkbox" name="line_event_finalized" form="notificationSettingsForm" {% if
+                        notification_settings["line_event_finalized"] %}checked{% endif %}>
+                    <span class="switch-slider"></span>
+                </label>
             </div>
-            <label class="switch">
-                <input type="checkbox" checked>
-                <span class="switch-slider"></span>
-            </label>
-        </div>
 
-        <div class="setting-item">
-            <div>
-                <div class="setting-name">未回答者へのリマインド</div>
-                <div class="setting-detail">
-                    投票が未回答の場合にお知らせします。
+            <div class="setting-item">
+                <div>
+                    <div class="setting-name">開催リマインド通知</div>
+                    <div class="setting-detail">
+                        開催前日・当日にLINEでお知らせします。
+                    </div>
                 </div>
+                <label class="switch">
+                    <input type="checkbox" name="line_reminders" form="notificationSettingsForm" {% if
+                        notification_settings["line_reminders"] %}checked{% endif %}>
+                    <span class="switch-slider"></span>
+                </label>
             </div>
-            <label class="switch">
-                <input type="checkbox">
-                <span class="switch-slider"></span>
-            </label>
+
+            <div class="setting-item">
+                <div>
+                    <div class="setting-name">未回答者へのリマインド</div>
+                    <div class="setting-detail">
+                        投票が未回答の場合にお知らせします。
+                    </div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" name="line_unanswered_reminders" form="notificationSettingsForm" {% if
+                        notification_settings["line_unanswered_reminders"] %}checked{% endif %}>
+                    <span class="switch-slider"></span>
+                </label>
+            </div>
+        </section>
+        <div style="text-align: center; margin: 30px 0;">
+            <button type="submit" form="notificationSettingsForm" style="
+            background: #f39832;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 13px 45px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        ">
+                通知設定を保存
+            </button>
         </div>
-    </section>
+        
 
-    <p class="settings-notice">
-        ※現在はデザイン確認用です。設定内容は保存されません。
-    </p>
+    </main>
 
-</main>
-
-<footer class="footer">
-    <p class="copyright">© 2024 Nomikai Adjustment Tool</p>
-</footer>
+    <footer class="footer">
+        <p class="copyright">© 2024 Nomikai Adjustment Tool</p>
+    </footer>
 
 </body>
+
 </html>

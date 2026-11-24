@@ -186,8 +186,35 @@ def init_db():
         except sqlite3.OperationalError:
             pass
 
+# ユーザーごとの通知設定テーブル
+    conn.execute("""
+    CREATE TABLE IF NOT EXISTS notification_settings (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER UNIQUE NOT NULL,
+
+        -- メール通知
+        email_event_changes INTEGER NOT NULL DEFAULT 1,
+        email_event_finalized INTEGER NOT NULL DEFAULT 1,
+        email_reminders INTEGER NOT NULL DEFAULT 1,
+
+        -- LINE通知
+        line_enabled INTEGER NOT NULL DEFAULT 0,
+        line_event_finalized INTEGER NOT NULL DEFAULT 1,
+        line_reminders INTEGER NOT NULL DEFAULT 1,
+        line_unanswered_reminders INTEGER NOT NULL DEFAULT 0,
+
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+
+
     conn.commit()
     conn.close()
+
+
+    
+
 
 
 # アプリ起動時にDBの自動初期化を実行
@@ -1153,14 +1180,19 @@ def complete():
         conn.commit()
 
 
-        # LINE通知（参加すると回答したユーザーのみ）
+        
+        # LINE通知（通知設定がONの参加者のみ）
         line_users = conn.execute("""
             SELECT DISTINCT line_accounts.line_user_id
             FROM votes
             JOIN line_accounts
                 ON votes.user_id = line_accounts.user_id
+            JOIN notification_settings
+                ON votes.user_id = notification_settings.user_id
             WHERE votes.event_id = ?
               AND votes.is_join = 1
+              AND notification_settings.line_enabled = 1
+              AND notification_settings.line_event_finalized = 1
         """, (event["id"],)).fetchall()
 
         line_message = (
@@ -1179,10 +1211,11 @@ def complete():
                 line_success += 1
 
         app.logger.info(
-            "LINE通知結果：対象%d人、送信成功%d人",
+            "LINE通知結果：設定ONの対象%d人、送信成功%d人",
             len(line_users),
             line_success
         )
+
 
 
         # 既存のメール通知処理を維持
@@ -1671,6 +1704,7 @@ def reset_password():
 # マイページ・通知設定（仮画面）
 # ==========================
 
+
 @app.route("/mypage/settings")
 def mypage_settings():
     if not login_required():
@@ -1678,25 +1712,129 @@ def mypage_settings():
 
     conn = get_db()
 
-    user = conn.execute(
-        "SELECT id FROM users WHERE username = ?",
-        (session["username"],)
-    ).fetchone()
+    try:
+        user = conn.execute(
+            "SELECT id FROM users WHERE username = ?",
+            (session["username"],)
+        ).fetchone()
 
-    linked = conn.execute(
-        "SELECT 1 FROM line_accounts WHERE user_id = ?",
-        (user["id"],)
-    ).fetchone()
+        if user is None:
+            flash("ユーザー情報を取得できませんでした。")
+            return redirect(url_for("login"))
 
-    conn.close()
+        user_id = user["id"]
 
-    return render_template(
-        "mypage_settings.html",
-        username=session["username"],
-        line_linked=bool(linked),
-        line_code=None,
-        line_code_expires=None
-    )
+        # LINE連携状態を取得
+        linked = conn.execute(
+            "SELECT 1 FROM line_accounts WHERE user_id = ?",
+            (user_id,)
+        ).fetchone()
+
+        # 通知設定が存在しない場合は初期設定を作成
+        conn.execute("""
+            INSERT OR IGNORE INTO notification_settings (user_id)
+            VALUES (?)
+        """, (user_id,))
+
+        conn.commit()
+
+        # 通知設定を取得
+        notification_settings = conn.execute("""
+            SELECT *
+            FROM notification_settings
+            WHERE user_id = ?
+        """, (user_id,)).fetchone()
+
+        return render_template(
+            "mypage_settings.html",
+            username=session["username"],
+            line_linked=bool(linked),
+            line_code=None,
+            line_code_expires=None,
+            notification_settings=notification_settings
+        )
+
+    finally:
+        conn.close()
+
+
+@app.route("/mypage/settings/save", methods=["POST"])
+def save_notification_settings():
+    if not login_required():
+        return redirect(url_for("login"))
+
+    conn = get_db()
+
+    try:
+        user = conn.execute(
+            "SELECT id FROM users WHERE username = ?",
+            (session["username"],)
+        ).fetchone()
+
+        if user is None:
+            flash("ユーザー情報を取得できませんでした。")
+            return redirect(url_for("login"))
+
+        user_id = user["id"]
+
+        # チェックボックスの状態を取得
+        settings = {
+            "email_event_changes": int(request.form.get("email_event_changes") == "on"),
+            "email_event_finalized": int(request.form.get("email_event_finalized") == "on"),
+            "email_reminders": int(request.form.get("email_reminders") == "on"),
+            "line_enabled": int(request.form.get("line_enabled") == "on"),
+            "line_event_finalized": int(request.form.get("line_event_finalized") == "on"),
+            "line_reminders": int(request.form.get("line_reminders") == "on"),
+            "line_unanswered_reminders": int(request.form.get("line_unanswered_reminders") == "on")
+        }
+
+        conn.execute("""
+            INSERT INTO notification_settings (
+                user_id,
+                email_event_changes,
+                email_event_finalized,
+                email_reminders,
+                line_enabled,
+                line_event_finalized,
+                line_reminders,
+                line_unanswered_reminders,
+                updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(user_id) DO UPDATE SET
+                email_event_changes = excluded.email_event_changes,
+                email_event_finalized = excluded.email_event_finalized,
+                email_reminders = excluded.email_reminders,
+                line_enabled = excluded.line_enabled,
+                line_event_finalized = excluded.line_event_finalized,
+                line_reminders = excluded.line_reminders,
+                line_unanswered_reminders = excluded.line_unanswered_reminders,
+                updated_at = CURRENT_TIMESTAMP
+        """, (
+            user_id,
+            settings["email_event_changes"],
+            settings["email_event_finalized"],
+            settings["email_reminders"],
+            settings["line_enabled"],
+            settings["line_event_finalized"],
+            settings["line_reminders"],
+            settings["line_unanswered_reminders"]
+        ))
+
+        conn.commit()
+        flash("通知設定を保存しました。")
+
+    except Exception:
+        conn.rollback()
+        app.logger.exception("通知設定の保存に失敗しました")
+        flash("通知設定の保存に失敗しました。")
+
+    finally:
+        conn.close()
+
+    return redirect(url_for("mypage_settings"))
+
+
 
 @app.route("/mypage/line/link", methods=["POST"])
 def line_link():
